@@ -1,0 +1,145 @@
+<RPFrameworkConfig>
+	<pluginConfig>
+		<guiConfiguration>
+			<showUPnPDebug>True</showUPnPDebug>
+			<pluginUpdateURL><![CDATA[http://forums.indigodomo.com/viewtopic.php?f=61&t=10798]]></pluginUpdateURL>
+		</guiConfiguration>
+		<deviceMapping>
+			<device indigoId="rokuRemoteDevice" className="RokuNetworkRemoteDevice" />
+		</deviceMapping>
+		<devices>
+			<device indigoId="rokuRemoteDevice">
+				<params>
+					<param indigoId="httpAddress" paramType="ParamTypeString" isRequired="True">
+						<validationExpression><![CDATA[^[a-z\d\. ]+$]]></validationExpression>
+						<invalidValueMessage><![CDATA[Please select the Roku to control or enter the IP address]]></invalidValueMessage>
+					</param>
+					<param indigoId="rokuIRCommandPause" paramType="ParamTypeFloat" isRequired="True">
+						<minValue>0.0</minValue>
+						<maxValue>1.0</maxValue>
+						<defaultValue>0.3</defaultValue>
+						<invalidValueMessage><![CDATA[Please enter a valid pause time between 0 and 1]]></invalidValueMessage>
+					</param>
+					<param indigoId="rokuLiteralCommandPause" paramType="ParamTypeFloat" isRequired="True">
+						<minValue>0.0</minValue>
+						<maxValue>1.0</maxValue>
+						<defaultValue>0.05</defaultValue>
+						<invalidValueMessage><![CDATA[Please enter a valid pause time between 0 and 1]]></invalidValueMessage>
+					</param>
+				</params>
+				<guiConfiguration>
+					<deviceAddressFormat><![CDATA[%ap:httpAddress%]]></deviceAddressFormat>
+					<deviceUPNPServiceId>roku:ecp</deviceUPNPServiceId>
+					<deviceUPNPSeachCacheTime>300</deviceUPNPSeachCacheTime>
+				</guiConfiguration>
+			</device>
+		</devices>
+		<actions>
+			<action indigoId="remoteButtonToRoku">
+				<commands>
+					<command>
+						<commandName>RESTFUL_PUT</commandName>
+						<commandFormat><![CDATA[/keypress/%ap:buttonSelect%]]></commandFormat>
+						<commandRepeatCount><![CDATA[%ap:repeatCount%]]></commandRepeatCount>
+						<commandRepeatDelay><![CDATA[%dp:rokuIRCommandPause%]]></commandRepeatDelay>
+					</command>
+				</commands>
+				<params>
+					<param indigoId="buttonSelect" paramType="ParamTypeString" isRequired="True">
+						<invalidValueMessage><![CDATA[Please select a button to send to the Roku]]></invalidValueMessage>
+					</param>
+					<param indigoId="repeatCount" paramType="ParamTypeInteger" isRequired="False">
+						<minValue>1</minValue>
+						<maxValue>20</maxValue>
+						<defaultValue>1</defaultValue>
+						<invalidValueMessage><![CDATA[Please enter a number of times to send the button (1-20 times)]]></invalidValueMessage>
+					</param>
+				</params>
+			</action>
+			<action indigoId="sendKeyboardString" deviceFilter="self">
+				<params>
+					<param indigoId="rokuKeyboardText" paramType="ParamTypeString" isRequired="True">
+						<validationExpression><![CDATA[^[a-z\d ]+$]]></validationExpression>
+						<invalidValueMessage><![CDATA[Please enter the text (alphanumeric characters only) to send to the Roku]]></invalidValueMessage>
+					</param>
+				</params>
+				<commands>
+					<command>
+						<commandName>SEND_KEYBOARD_STRING</commandName>
+						<commandFormat><![CDATA[%ap:rokuKeyboardText%]]></commandFormat>
+					</command>
+				</commands>
+			</action>
+			<action indigoId="launchChannel">
+				<commands>
+					<command>
+						<commandName>RESTFUL_PUT</commandName>
+						<commandFormat><![CDATA[/launch/%ap:rokuAppId%]]></commandFormat>
+					</command>
+				</commands>
+				<params>
+					<param indigoId="rokuAppId" paramType="ParamTypeString" isRequired="True">
+						<invalidValueMessage><![CDATA[Please select the channel/application to search]]></invalidValueMessage>
+					</param>
+				</params>
+			</action>
+			<action indigoId="performSearchOnChannel" deviceFilter="self">
+				<params>
+					<param indigoId="rokuAppId" paramType="ParamTypeString" isRequired="True">
+						<invalidValueMessage><![CDATA[Please select the channel/application to search]]></invalidValueMessage>
+					</param>
+					<param indigoId="searchText" paramType="ParamTypeString" isRequired="False">
+						<validationExpression><![CDATA[^[a-z\d ]+$]]></validationExpression>
+						<invalidValueMessage><![CDATA[Please enter only letters and numbers for the search term]]></invalidValueMessage>
+					</param>
+					<param indigoId="amazonPauseForLaunch" paramType="ParamTypeFloat" isRequired="False">
+						<minValue>0</minValue>
+						<maxValue>20</maxValue>
+						<defaultValue>6.5</defaultValue>
+						<invalidValueMessage><![CDATA[Please enter the number of seconds to pause for the channel to launch (0 to 20)]]></invalidValueMessage>
+					</param>
+					<param indigoId="amazonStopAtSuggestions" paramType="ParamTypeBoolean" isRequired="False">
+						<defaultValue>False</defaultValue>
+					</param>
+					<param indigoId="netflixPauseForLaunch" paramType="ParamTypeFloat" isRequired="False">
+						<minValue>0</minValue>
+						<maxValue>20</maxValue>
+						<defaultValue>9</defaultValue>
+						<invalidValueMessage><![CDATA[Please enter the number of seconds to pause for the channel to launch (0 to 20)]]></invalidValueMessage>
+					</param>
+					<param indigoId="netflixStopAtSuggestions" paramType="ParamTypeBoolean" isRequired="False">
+						<defaultValue>False</defaultValue>
+					</param>
+				</params>
+			</action>
+			<action indigoId="downloadChannelIcons">
+				<params>
+					<param indigoId="destinationOverride" paramType="ParamTypeOSDirectoryPath" isRequired="False">
+						<invalidValueMessage><![CDATA[Please enter a valid and accessible directory to which the icons should be downloaded]]></invalidValueMessage>
+					</param>
+				</params>
+				<commands>
+					<command>
+						<commandName>DOWNLOAD_CHANNEL_ICONS</commandName>
+						<commandFormat><![CDATA[%ap:destinationOverride%]]></commandFormat>
+					</command>
+				</commands>
+			</action>
+			
+			<!-- ARBITRARY COMMAND PROCESSING -->
+			<action indigoId="sendArbitraryCommand">
+				<commands>
+					<command>
+						<commandName>RESTFUL_PUT</commandName>
+						<commandFormat>%ap:commandCode%</commandFormat>
+					</command>
+				</commands>
+				<params>
+					<param indigoId="commandCode" paramType="ParamTypeString" isRequired="True">
+						<invalidValueMessage><![CDATA[Please enter a command to send]]></invalidValueMessage>
+					</param>
+				</params>
+			</action>
+		</actions>
+	</pluginConfig>
+</RPFrameworkConfig>

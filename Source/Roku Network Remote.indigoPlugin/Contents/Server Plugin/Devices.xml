@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<Devices>
+
+	<!-- a simple, one-way Roku network remote... it does not attempt to actively -->
+	<!-- communicate Roku status due to limitations of the Roku External Control -->
+	<!-- Protocol -->
+	<Device type="custom" id="rokuRemoteDevice">
+		<Name>Roku Network Remote Control</Name>
+		<ConfigUI>	
+			<Field id="commOptionsTitle" type="label" fontColor="darkGray">
+				<Label>NETWORK OPTIONS</Label>
+			</Field>
+			<Field id="instructionSeparator2" type="separator" />
+			<Field id="rokuSelectionInstructions" type="label" fontSize="small">
+				<Label>Please select a Roku from those found on the network. If your Roku is not found or you would prefer to save a set IP address for the device, manually enter the IP address in the field provided.</Label>
+			</Field>
+			<Field id="upnpEnumeratedDevices" type="menu">
+				<Label>Devices Found:</Label>
+				<List class="self" filter="" method="getConfigDialogUPNPDeviceMenu" />
+			</Field>
+			<Field id="selectEnumeratedDevice" type="button" enabledBindingId="upnpEnumeratedDevices">
+				<Label></Label>
+				<Title>Use Selected Device</Title>
+				<CallbackMethod>selectUPNPEnumeratedDeviceForUse</CallbackMethod>
+			</Field>
+			<Field id="httpAddress" type="textfield">
+				<Label>Hostname or IP Address:</Label>	
+			</Field>
+			<Field type="label" id="perfOptionsSpacer" fontSize="small">
+				<Label></Label>
+			</Field>
+			<Field id="performanceTitle" type="label" fontColor="darkGray">
+				<Label>PERFORMANCE OPTIONS</Label>
+			</Field>
+			<Field id="performanceSeparator2" type="separator" />
+			<Field id="actionDelayInstructions" type="label" fontSize="small">
+				<Label>This plugin is capable of sending commands faster than the Roku devices can respond to the input; therefore the plugin must initiate a pause after each command when sending them back-to-back, such as sending a string of text. If you are experiencing issues with missing keys/commands you may wish to increase these delay times.</Label>
+			</Field>
+			<Field id="rokuIRCommandPause" type="textfield" defaultValue="0.3">
+				<Label>Pause after an IR Command:</Label>
+			</Field>
+			<Field id="rokuLiteralCommandPause" type="textfield" defaultValue="0.05">
+				<Label>Pause after text character sent:</Label>
+			</Field>
+			<Field id="address" type="textfield" hidden='true' >
+				<Label/>
+			</Field>
+		</ConfigUI>
+		<States>
+			<State id="lastDiscoveredIPAddress">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Last Resolved IP Address</TriggerLabel>
+				<ControlPageLabel>Last Resolved IP Address</ControlPageLabel>
+			</State>
+		</States>
+	</Device>
+	
+</Devices>
