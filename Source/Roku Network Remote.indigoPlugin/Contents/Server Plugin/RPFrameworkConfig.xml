@@ -39,7 +39,7 @@
 				<commands>
 					<command>
 						<commandName>RESTFUL_PUT</commandName>
-						<commandFormat><![CDATA[/keypress/%ap:buttonSelect%]]></commandFormat>
+						<commandFormat><![CDATA[http|*|/keypress/%ap:buttonSelect%]]></commandFormat>
 						<commandRepeatCount><![CDATA[%ap:repeatCount%]]></commandRepeatCount>
 						<commandRepeatDelay><![CDATA[%dp:rokuIRCommandPause%]]></commandRepeatDelay>
 					</command>
@@ -74,7 +74,7 @@
 				<commands>
 					<command>
 						<commandName>RESTFUL_PUT</commandName>
-						<commandFormat><![CDATA[/launch/%ap:rokuAppId%]]></commandFormat>
+						<commandFormat><![CDATA[http|*|/launch/%ap:rokuAppId%]]></commandFormat>
 					</command>
 				</commands>
 				<params>
@@ -131,7 +131,7 @@
 				<commands>
 					<command>
 						<commandName>RESTFUL_PUT</commandName>
-						<commandFormat>%ap:commandCode%</commandFormat>
+						<commandFormat>http|*|%ap:commandCode%</commandFormat>
 					</command>
 				</commands>
 				<params>

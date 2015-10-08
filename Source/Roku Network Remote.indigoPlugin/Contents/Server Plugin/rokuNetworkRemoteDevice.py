@@ -49,20 +49,20 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 		# addresses to the new version
 		devProps = self.indigoDevice.pluginProps
 		
-		tempRokuIPAddress = devProps.get("rokuIPAddress", "")
-		tempRokuSerialNumber = devProps.get("rokuEnumeratedUSN", "")
-		if tempRokuIPAddress != "":
-			devProps["httpAddress"] = tempRokuIPAddress
-			devProps["rokuIPAddress"] = ""
+		tempRokuIPAddress = devProps.get(u'rokuIPAddress', u'')
+		tempRokuSerialNumber = devProps.get(u'rokuEnumeratedUSN', u'')
+		if tempRokuIPAddress != u'':
+			devProps[u'httpAddress'] = tempRokuIPAddress
+			devProps[u'rokuIPAddress'] = u''
 			device.replacePluginPropsOnServer(devProps)
-		elif tempRokuSerialNumber != "":
-			devProps["httpAddress"] = tempRokuSerialNumber
-			devProps["rokuEnumeratedUSN"] = ""
+		elif tempRokuSerialNumber != u'':
+			devProps[u'httpAddress'] = tempRokuSerialNumber
+			devProps[u'rokuEnumeratedUSN'] = u''
 			device.replacePluginPropsOnServer(devProps)
-		self.rokuNetworkAddress = devProps.get("httpAddress", "")
+		self.rokuNetworkAddress = devProps.get(u'httpAddress', u'')
 
-		self.cachedIPAddress = ""
-		self.hostPlugin.logDebugMessage("Roku Address is " + self.rokuNetworkAddress, RPFramework.RPFrameworkPlugin.DEBUGLEVEL_LOW)
+		self.cachedIPAddress = u''
+		self.hostPlugin.logDebugMessage(u'Roku Address is ' + self.rokuNetworkAddress, RPFramework.RPFrameworkPlugin.DEBUGLEVEL_LOW)
 
 	
 	#/////////////////////////////////////////////////////////////////////////////////////
@@ -73,25 +73,25 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 	# base class; it will be called on a concurrent thread
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	def handleUnmanagedCommandInQueue(self, deviceHTTPAddress, rpCommand):
-		if rpCommand.commandName == "SEND_KEYBOARD_STRING":
+		if rpCommand.commandName == u'SEND_KEYBOARD_STRING':
 			# needs to send a string of text to the roku device as a series of keypress
 			# commands (RESTFUL_PUT commands)
 			validatedText = re.sub(r'[^a-z\d ]', '', rpCommand.commandPayload.lower())
-			if validatedText == "":
-				self.hostPlugin.logDebugMessage("Ignoring send text to Roku, validated string is blank (source: " + rpCommand.commandPayload + ")", RPFramework.RPFrameworkPlugin.DEBUGLEVEL_MED)
+			if validatedText == u'':
+				self.hostPlugin.logDebugMessage(u'Ignoring send text to Roku, validated string is blank (source: ' + rpCommand.commandPayload + u')', RPFramework.RPFrameworkPlugin.DEBUGLEVEL_MED)
 			else:
-				self.hostPlugin.logDebugMessage("Sending keyboard text: " + validatedText, RPFramework.RPFrameworkPlugin.DEBUGLEVEL_HIGH)
-				pauseBetweenKeys = float(self.indigoDevice.pluginProps.get("rokuLiteralCommandPause", "0.1"))
+				self.hostPlugin.logDebugMessage(u'Sending keyboard text: ' + validatedText, RPFramework.RPFrameworkPlugin.DEBUGLEVEL_HIGH)
+				pauseBetweenKeys = float(self.indigoDevice.pluginProps.get(u'rokuLiteralCommandPause', u'0.1'))
 				for char in validatedText:
-					self.queueDeviceCommand(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, commandPayload="/keypress/Lit_" + urllib.quote_plus(char), postCommandPause=pauseBetweenKeys))
+					self.queueDeviceCommand(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, commandPayload=u'http|*|/keypress/Lit_' + urllib.quote_plus(char), postCommandPause=pauseBetweenKeys))
 		
-		elif rpCommand.commandName == "DOWNLOAD_CHANNEL_ICONS":
+		elif rpCommand.commandName == u'DOWNLOAD_CHANNEL_ICONS':
 			# the user has requested that we download all of the icons for channels on the Roku device...
 			downloadDestination = rpCommand.commandPayload
-			if downloadDestination == None or downloadDestination == "":
+			if downloadDestination == None or downloadDestination == u'':
 				downloadDestination = indigo.server.getInstallFolderPath()
-				self.hostPlugin.logDebugMessage("Indigo installation folder: " + downloadDestination, RPFramework.RPFrameworkPlugin.DEBUGLEVEL_MED)
-				downloadDestination = os.path.join(downloadDestination, "IndigoWebServer/images/controls/static")
+				self.hostPlugin.logDebugMessage(u'Indigo installation folder: ' + downloadDestination, RPFramework.RPFrameworkPlugin.DEBUGLEVEL_MED)
+				downloadDestination = os.path.join(downloadDestination, u'IndigoWebServer/images/controls/static')
 			 
 			# retrieve the list of channels/applications and attempt to download
 			# each application's icon
@@ -103,18 +103,18 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 					applicationId = rokuApp[0]
 					applicationName = rokuApp[2]
 					
-					self.hostPlugin.logDebugMessage("Attempting download of icon for App #" + applicationId + " (" + applicationName + ")", RPFramework.RPFrameworkPlugin.DEBUGLEVEL_MED)
+					self.hostPlugin.logDebugMessage(u'Attempting download of icon for App #' + applicationId + u' (' + applicationName + u')', RPFramework.RPFrameworkPlugin.DEBUGLEVEL_MED)
 					conn = httplib.HTTPConnection(deviceHTTPAddress[0], deviceHTTPAddress[1])
 					conn.connect()
-					request = conn.putrequest('GET', '/query/icon/' + applicationId)
+					request = conn.putrequest(u'GET', u'/query/icon/' + applicationId)
 					conn.endheaders()
 					
 					iconResponse = conn.getresponse()
-					iconImageExtension = iconResponse.getheader("content-type").replace("image/", "")
-					iconImageSaveFN = os.path.join(downloadDestination, "RokuChannelIcon_" + applicationId + "." + iconImageExtension)
+					iconImageExtension = iconResponse.getheader(u'content-type').replace(u'image/', u'')
+					iconImageSaveFN = os.path.join(downloadDestination, u'RokuChannelIcon_' + applicationId + u'.' + iconImageExtension)
 					
-					self.hostPlugin.logDebugMessage("Saving icon to " + iconImageSaveFN, RPFramework.RPFrameworkPlugin.DEBUGLEVEL_MED)
-					iconFile = open(iconImageSaveFN, 'wb')
+					self.hostPlugin.logDebugMessage(u'Saving icon to ' + iconImageSaveFN, RPFramework.RPFrameworkPlugin.DEBUGLEVEL_MED)
+					iconFile = open(RPFramework.RPFrameworkUtils.to_str(iconImageSaveFN), "wb")
 					iconFile.write(iconResponse.read())
 					iconFile.close()
 					
@@ -129,7 +129,7 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 	# RESTful device. It may connect via IP address or a host name
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	def getRESTfulDeviceAddress(self):
-		self.hostPlugin.logDebugMessage("IP address requested for Roku Device: " + self.rokuNetworkAddress, RPFramework.RPFrameworkPlugin.DEBUGLEVEL_LOW)
+		self.hostPlugin.logDebugMessage(u'IP address requested for Roku Device: ' + self.rokuNetworkAddress, RPFramework.RPFrameworkPlugin.DEBUGLEVEL_LOW)
 			
 		# if the ip address has not been filled in then we must look it up by serialNumber
 		# via the SSDP service
@@ -151,27 +151,27 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 	# when asynchronous operations are required
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	def obtainRokuIPAddress(self, serialNumber):
-		if self.cachedIPAddress == "":
+		if self.cachedIPAddress == u'':
 			self.hostPlugin.updateUPNPEnumerationList(self.indigoDevice.deviceTypeId)
 			rokuList = self.hostPlugin.enumeratedDevices
 			for rokuDevice in rokuList:
 				enumeratedSerial = string.replace(rokuDevice.usn, 'uuid:roku:ecp:', '')
 				if enumeratedSerial == serialNumber:
 					discoveredIPAddress = re.match(r'http://([\d\.]*)\:{0,1}(\d+)', rokuDevice.location, re.I).group(1)
-					self.hostPlugin.logDebugMessage("Found IP address of " + discoveredIPAddress + " for serial #" + serialNumber, RPFramework.RPFrameworkPlugin.DEBUGLEVEL_MED)
+					self.hostPlugin.logDebugMessage(u'Found IP address of ' + discoveredIPAddress + u' for serial #' + serialNumber, RPFramework.RPFrameworkPlugin.DEBUGLEVEL_MED)
 					self.cachedIPAddress = discoveredIPAddress
-					self.indigoDevice.updateStateOnServer("lastDiscoveredIPAddress", value=discoveredIPAddress)
+					self.indigoDevice.updateStateOnServer(u'lastDiscoveredIPAddress', value=discoveredIPAddress)
 					return discoveredIPAddress
 			
 			# if execution made it through the loop then the device was not found... first attempt
 			# to read the last known IP address, then bail with a failure to find
-			if self.indigoDevice.states.get("lastDiscoveredIPAddress", "") != "":
-				lastKnownIP = self.indigoDevice.states.get("lastDiscoveredIPAddress")
-				self.hostPlugin.logDebugMessage("Using last discovered IP address: " + lastKnownIP, RPFramework.RPFrameworkPlugin.DEBUGLEVEL_MED)
+			if self.indigoDevice.states.get(u'lastDiscoveredIPAddress', u'') != u'':
+				lastKnownIP = self.indigoDevice.states.get(u'lastDiscoveredIPAddress')
+				self.hostPlugin.logDebugMessage(u'Using last discovered IP address: ' + lastKnownIP, RPFramework.RPFrameworkPlugin.DEBUGLEVEL_MED)
 				return lastKnownIP
 			else:
-				self.hostPlugin.logDebugMessage("IP not found for serial #" + serialNumber, RPFramework.RPFrameworkPlugin.DEBUGLEVEL_LOW)
-				return ""
+				self.hostPlugin.logDebugMessage(u'IP not found for serial #' + serialNumber, RPFramework.RPFrameworkPlugin.DEBUGLEVEL_LOW)
+				return u''
 		else:
 			return self.cachedIPAddress
 				
@@ -191,17 +191,17 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 				
 			# send a GET to the roku which should result in a list of applications
 			# available (in XML format)
-			self.hostPlugin.logDebugMessage("Sending /query/apps request to " + deviceIPAddress[0], RPFramework.RPFrameworkPlugin.DEBUGLEVEL_MED)
+			self.hostPlugin.logDebugMessage(u'Sending /query/apps request to ' + deviceIPAddress[0], RPFramework.RPFrameworkPlugin.DEBUGLEVEL_MED)
 			conn = httplib.HTTPConnection(deviceIPAddress[0], int(deviceIPAddress[1]))
 			conn.connect()
-			request = conn.putrequest('GET', "/query/apps")
+			request = conn.putrequest("GET", "/query/apps")
 			conn.endheaders()
 			
 			# read the response to the query
 			responseToREST = conn.getresponse()
 			responseStatus = responseToREST.status
 			bodyText = responseToREST.read()
-			self.hostPlugin.logDebugMessage("App list response: " + str(responseStatus) + "; body: " + bodyText, RPFramework.RPFrameworkPlugin.DEBUGLEVEL_HIGH)
+			self.hostPlugin.logDebugMessage(u'App list response: ' + RPFramework.RPFrameworkUtils.to_unicode(responseStatus) + u'; body: ' + bodyText, RPFramework.RPFrameworkPlugin.DEBUGLEVEL_HIGH)
 			
 			# parse out the XML returned which should be in the format of:
 			#	<apps>
@@ -214,7 +214,6 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 			self.hostPlugin.exceptionLog()
 			return []
 			
-
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# Send a series of commands to attempt to perform a search on a channel
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -224,41 +223,41 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 		# just being brought to the search box
 		commands = []
 		
-		literalPauseTime = float(self.indigoDevice.pluginProps.get("rokuLiteralCommandPause", "0.1"))
-		irPauseTime = float(self.indigoDevice.pluginProps.get("rokuIRCommandPause", "0.1"))
+		literalPauseTime = float(self.indigoDevice.pluginProps.get(u'rokuLiteralCommandPause', u'0.1'))
+		irPauseTime = float(self.indigoDevice.pluginProps.get(u'rokuIRCommandPause', u'0.1'))
 		
 		# -=-=- LAUNCH SEARCH SCREEN COMMANDS -=-=-
-		if selectedChannel == "13":
+		if selectedChannel == u'13':
 			# -=-=- AMAZON PRIME -=-=-
-			commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, commandPayload="/launch/13"))
+			commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, commandPayload=u'http|*|/launch/13'))
 			commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkCommand.CMD_PAUSE_PROCESSING, commandPayload=channelLaunchPause))
-			commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, commandPayload="/keypress/Select"))
-			commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkCommand.CMD_PAUSE_PROCESSING, commandPayload="2"))
+			commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, commandPayload=u'http|*|/keypress/Select'))
+			commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkCommand.CMD_PAUSE_PROCESSING, commandPayload=u'2'))
 				
-		elif selectedChannel == "12":
+		elif selectedChannel == u'12':
 			# -=-=- NETFLIX -=-=-
-			commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, commandPayload="/launch/12"))
+			commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, commandPayload=u'http|*|/launch/12'))
 			commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkCommand.CMD_PAUSE_PROCESSING, commandPayload=channelLaunchPause))
-			commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, commandPayload="/keypress/Search"))
-			commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkCommand.CMD_PAUSE_PROCESSING, commandPayload="2"))
+			commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, commandPayload=u'http|*|/keypress/Search'))
+			commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkCommand.CMD_PAUSE_PROCESSING, commandPayload=u'2'))
 		# -=-=- END LAUNCH SEARCH SCREEN COMMANDS -=-=-
 				
 		# -=-=- ENTER SEARCH STRING COMMANDS -=-=-
-		if searchText != "":
+		if searchText != u'':
 			for char in searchText:
-				commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, commandPayload="/keypress/Lit_" + urllib.quote_plus(char), postCommandPause=literalPauseTime))
+				commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, commandPayload=u'/keypress/Lit_' + urllib.quote_plus(char), postCommandPause=literalPauseTime))
 				
 		# -=-=- POST SEARCH TERM COMMANDS -=-=-
 		if searchText != "":
 			if stopAtSuggestions == True:
-				commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, commandPayload="/keypress/Right", postCommandPause=irPauseTime))
-				commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, commandPayload="/keypress/Right", postCommandPause=irPauseTime))
-				commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, commandPayload="/keypress/Right", postCommandPause=irPauseTime))
-				commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, commandPayload="/keypress/Right", postCommandPause=irPauseTime))
-				commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, commandPayload="/keypress/Right", postCommandPause=irPauseTime))
-				commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, commandPayload="/keypress/Right"))
+				commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, commandPayload=u'http|*|/keypress/Right', postCommandPause=irPauseTime))
+				commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, commandPayload=u'http|*|/keypress/Right', postCommandPause=irPauseTime))
+				commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, commandPayload=u'http|*|/keypress/Right', postCommandPause=irPauseTime))
+				commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, commandPayload=u'http|*|/keypress/Right', postCommandPause=irPauseTime))
+				commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, commandPayload=u'http|*|/keypress/Right', postCommandPause=irPauseTime))
+				commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, commandPayload=u'http|*|/keypress/Right'))
 			else:
-				commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, commandPayload="/keypress/Enter"))
+				commands.append(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, commandPayload=u'http|*|/keypress/Enter'))
 		# -=-=- END POST SEARCH TERM COMMANDS -=-=-
 				
 		# send the commands to the roku now...

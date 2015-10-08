@@ -67,7 +67,7 @@ class Plugin(RPFramework.RPFrameworkPlugin.RPFrameworkPlugin):
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	def __init__(self, pluginId, pluginDisplayName, pluginVersion, pluginPrefs):
 		# RP framework base class's init method
-		super(Plugin, self).__init__(pluginId, pluginDisplayName, pluginVersion, pluginPrefs, "http://www.duncanware.com/Downloads/IndigoHomeAutomation/Plugins/RokuNetworkRemote/RokuNetworkRemoteVersionInfo.html", managedDeviceClassModule=rokuNetworkRemoteDevice)
+		super(Plugin, self).__init__(pluginId, pluginDisplayName, pluginVersion, pluginPrefs, u'http://www.duncanware.com/Downloads/IndigoHomeAutomation/Plugins/RokuNetworkRemote/RokuNetworkRemoteVersionInfo.html', managedDeviceClassModule=rokuNetworkRemoteDevice)
 		
 		# create a list that will hold a cached version of the list of roku hardware
 		# devices found on the network
@@ -89,7 +89,7 @@ class Plugin(RPFramework.RPFrameworkPlugin.RPFrameworkPlugin):
 			for rokuDevice in deviceList:
 				serialNumber = string.replace(rokuDevice.usn, 'uuid:roku:ecp:', '')
 				ipAddress = re.match(r'http://([\d\.]*)\:{0,1}(\d+)', rokuDevice.location, re.I)
-				rokuOptions.append((serialNumber, "Serial #" + serialNumber + " (Currently " + ipAddress.group(1) + ")"))
+				rokuOptions.append((RPFramework.RPFrameworkUtils.to_unicode(serialNumber), u'Serial #' + RPFramework.RPFrameworkUtils.to_unicode(serialNumber) + u' (Currently ' + RPFramework.RPFrameworkUtils.to_unicode(ipAddress.group(1)) + u')'))
 			return rokuOptions
 			
 		except:
@@ -101,7 +101,7 @@ class Plugin(RPFramework.RPFrameworkPlugin.RPFrameworkPlugin):
 	# This routine is called back to the plugin when the GUI action loads that allows
 	# launching a channel
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-	def retrieveRokuApps(self, filter="", valuesDict=None, typeId="", targetId=0):
+	def retrieveRokuApps(self, filter=u'', valuesDict=None, typeId=u'', targetId=0):
 		try:
 			# use the roku device to retrieve the list of available applications
 			availableApps = self.managedDevices[targetId].retrieveAppList()
@@ -123,12 +123,12 @@ class Plugin(RPFramework.RPFrameworkPlugin.RPFrameworkPlugin):
 	# This routine is called back to the plugin when the GUI action loads that allows
 	# launching a channel that will be searched
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-	def retrieveSearchableRokuApps(self, filter="", valuesDict=None, typeId="", targetId=0):
+	def retrieveSearchableRokuApps(self, filter=u'', valuesDict=None, typeId=u'', targetId=0):
 		appsList = self.retrieveRokuApps(filter, valuesDict, typeId, targetId)
 		searchableAppsList = []
 		
 		for rokuApp in appsList:
-			if rokuApp[0] == "13" or rokuApp[0] == "12":
+			if rokuApp[0] == u'13' or rokuApp[0] == u'12':
 				searchableAppsList.append(rokuApp)
 				
 		return searchableAppsList
@@ -142,17 +142,17 @@ class Plugin(RPFramework.RPFrameworkPlugin.RPFrameworkPlugin):
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	def performSearchOnChannel(self, pluginAction):
 		dev = indigo.devices[pluginAction.deviceId]
-		selectedChannel = pluginAction.props.get("rokuAppId")
-		searchText = pluginAction.props.get("searchText", "")
+		selectedChannel = pluginAction.props.get(u'rokuAppId')
+		searchText = pluginAction.props.get(u'searchText', u'')
 		
-		launchChannelPause = "5"
+		launchChannelPause = u'5'
 		stopAtSuggestions = False
-		if selectedChannel == "12":
-			launchChannelPause = pluginAction.props.get("netflixPauseForLaunch", "9")
+		if selectedChannel == u'12':
+			launchChannelPause = pluginAction.props.get(u'netflixPauseForLaunch', u'9')
 			stopAtSuggestions = pluginAction.props.get("netflixStopAtSuggestions", False)
-		elif selectedChannel == "13":
-			launchChannelPause = pluginAction.props.get("amazonPauseForLaunch", "6.5")
-			stopAtSuggestions = pluginAction.props.get("amazonStopAtSuggestions", False)
+		elif selectedChannel == u'13':
+			launchChannelPause = pluginAction.props.get(u'amazonPauseForLaunch', u'6.5')
+			stopAtSuggestions = pluginAction.props.get(u'amazonStopAtSuggestions', False)
 		
 		self.managedDevices[dev.id].performSearchOnChannel(selectedChannel, launchChannelPause, searchText, stopAtSuggestions)
 
@@ -162,23 +162,23 @@ class Plugin(RPFramework.RPFrameworkPlugin.RPFrameworkPlugin):
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-	
 	def sendArbitraryCommand(self, valuesDict, typeId):
 		try:
-			deviceId = valuesDict.get("targetDevice", "0")
-			commandCode = valuesDict.get("commandToSend", "").strip()
+			deviceId = valuesDict.get(u'targetDevice', u'0')
+			commandCode = valuesDict.get(u'commandToSend', u'').strip()
 		
-			if deviceId == "" or deviceId == "0":
+			if deviceId == u'' or deviceId == u'0':
 				# no device was selected
 				errorDict = indigo.Dict()
-				errorDict["targetDevice"] = "Please select a device"
+				errorDict[u'targetDevice'] = u'Please select a device'
 				return (False, valuesDict, errorDict)
-			elif commandCode == "":
+			elif commandCode == u'':
 				errorDict = indigo.Dict()
-				errorDict["commandToSend"] = "Enter command to send"
+				errorDict[u'commandToSend'] = u'Enter command to send'
 				return (False, valuesDict, errorDict)
 			else:
 				# send the code using the normal action processing...
 				actionParams = indigo.Dict()
-				actionParams["commandCode"] = commandCode
-				self.executeAction(pluginAction=None, indigoActionId="sendArbitraryCommand", indigoDeviceId=int(deviceId), paramValues=actionParams)
+				actionParams[u'commandCode'] = commandCode
+				self.executeAction(pluginAction=None, indigoActionId=u'sendArbitraryCommand', indigoDeviceId=int(deviceId), paramValues=actionParams)
 				return (True, valuesDict)
 		except:
 			self.exceptionLog()
