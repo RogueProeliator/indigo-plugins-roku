@@ -9,3 +9,9 @@ This plugin should work with any Roku streaming player; you must be on Firmware 
 The auto-discovery feature requires that the Roku and Indigo server be on the same subnet, though manual IP entry should allow remote control via a WAN interfaces (such as over a VPN connection).
 
 #Installation and Configuration
+###Obtaining the Plugin
+The latest released version of the plugin is available for download [here](http://www.duncanware.com/Downloads/IndigoHomeAutomation/Plugins/RokuNetworkRemote/RokuNetworkRemote.zip). This download is a ZIP archive of the .indigoPlugin file. ALternatively, you may pull from this source repository, but must also pull the [RPFramework](https://github.com/RogueProeliator/IndigoPlugins-RPFramework), add its contents to the plugin directory under 'Server Plugin'.
+
+###Configuring the Plugin
+Upon first installation you will be asked to configure the plugin; please see the instructions on the configuration screen for more information. Most users will be fine with the defaults unless an email is desired when a new version is released.
+![]<Resources/Doc-Images/PluginConfigurationScreen.png>
