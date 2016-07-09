@@ -14,11 +14,11 @@ The latest released version of the plugin is available for download [here](http:
 
 ###Configuring the Plugin
 Upon first installation you will be asked to configure the plugin; please see the instructions on the configuration screen for more information. Most users will be fine with the defaults unless an email is desired when a new version is released.
-![](<Resources/Doc-Images/PluginConfigurationScreen.png>)
+![](<Documentation/Doc-Images/PluginConfigurationScreen.png>)
 
 #Plugin Devices
 When creating (or editing a device), in the Device Settings you will need to select from the list of Roku devices found on the network or else manually enter your Roku's IP address. Note that if you ever lose connection with your Roku device, you may need to return here to find/enter the IP Address again if it has picked up a new address on the network (the plugin will attempt to find the IP address if it or the server is restarted). Please read the other configuration instructions shown on screen as you may be able to adjust to optimize the performance of your Roku hardware.
-![](<Resources/Doc-Images/EditDeviceSettings.png>)
+![](<Documentation/Doc-Images/EditDeviceSettings.png>)
 
 #Available Actions
 ###Send Button Press
