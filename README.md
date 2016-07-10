@@ -10,7 +10,7 @@ The auto-discovery feature requires that the Roku and Indigo server be on the sa
 
 #Installation and Configuration
 ###Obtaining the Plugin
-The latest released version of the plugin is available for download [here](http://www.duncanware.com/Downloads/IndigoHomeAutomation/Plugins/RokuNetworkRemote/RokuNetworkRemote.zip). This download is a ZIP archive of the .indigoPlugin file. ALternatively, you may pull from this source repository, but must also pull the [RPFramework](https://github.com/RogueProeliator/IndigoPlugins-RPFramework), add its contents to the plugin directory under 'Server Plugin'.
+The latest released version of the plugin is available for download in the GitHub Releases section... those versions in beta will be marked as a Pre-Release and will not appear in update notifications. Once installed, you may use the Check for Updates option in the plugin's menu to check for and download updates.
 
 ###Configuring the Plugin
 Upon first installation you will be asked to configure the plugin; please see the instructions on the configuration screen for more information. Most users will be fine with the defaults unless an email is desired when a new version is released.
