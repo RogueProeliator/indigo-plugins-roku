@@ -67,7 +67,7 @@ class Plugin(RPFramework.RPFrameworkPlugin.RPFrameworkPlugin):
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	def __init__(self, pluginId, pluginDisplayName, pluginVersion, pluginPrefs):
 		# RP framework base class's init method
-		super(Plugin, self).__init__(pluginId, pluginDisplayName, pluginVersion, pluginPrefs, managedDeviceClassModule=rokuNetworkRemoteDevice)
+		super(Plugin, self).__init__(pluginId, pluginDisplayName, pluginVersion, pluginPrefs, managedDeviceClassModule=rokuNetworkRemoteDevice, pluginSupportsUPNP=True)
 		
 		# create a list that will hold a cached version of the list of roku hardware
 		# devices found on the network

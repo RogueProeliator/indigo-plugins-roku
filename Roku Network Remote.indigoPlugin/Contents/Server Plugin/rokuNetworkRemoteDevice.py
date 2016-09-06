@@ -62,7 +62,7 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 		self.rokuNetworkAddress = devProps.get(u'httpAddress', u'')
 
 		self.cachedIPAddress = u''
-		self.hostPlugin.logDebugMessage(u'Roku Address is ' + self.rokuNetworkAddress, RPFramework.RPFrameworkPlugin.DEBUGLEVEL_LOW)
+		self.hostPlugin.logger.debug(u'Roku Address is ' + self.rokuNetworkAddress)
 
 	
 	#/////////////////////////////////////////////////////////////////////////////////////
@@ -78,9 +78,9 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 			# commands (RESTFUL_PUT commands)
 			validatedText = re.sub(r'[^a-z\d ]', '', rpCommand.commandPayload.lower())
 			if validatedText == u'':
-				self.hostPlugin.logDebugMessage(u'Ignoring send text to Roku, validated string is blank (source: ' + rpCommand.commandPayload + u')', RPFramework.RPFrameworkPlugin.DEBUGLEVEL_MED)
+				self.hostPlugin.logger.debug(u'Ignoring send text to Roku, validated string is blank (source: ' + rpCommand.commandPayload + u')')
 			else:
-				self.hostPlugin.logDebugMessage(u'Sending keyboard text: ' + validatedText, RPFramework.RPFrameworkPlugin.DEBUGLEVEL_HIGH)
+				self.hostPlugin.logger.threaddebug(u'Sending keyboard text: ' + validatedText)
 				pauseBetweenKeys = float(self.indigoDevice.pluginProps.get(u'rokuLiteralCommandPause', u'0.1'))
 				for char in validatedText:
 					self.queueDeviceCommand(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, commandPayload=u'http|*|/keypress/Lit_' + urllib.quote_plus(char), postCommandPause=pauseBetweenKeys))
@@ -90,7 +90,7 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 			downloadDestination = rpCommand.commandPayload
 			if downloadDestination == None or downloadDestination == u'':
 				downloadDestination = indigo.server.getInstallFolderPath()
-				self.hostPlugin.logDebugMessage(u'Indigo installation folder: ' + downloadDestination, RPFramework.RPFrameworkPlugin.DEBUGLEVEL_MED)
+				self.hostPlugin.logger.threaddebug(u'Indigo installation folder: ' + downloadDestination)
 				downloadDestination = os.path.join(downloadDestination, u'IndigoWebServer/images/controls/static')
 			 
 			# retrieve the list of channels/applications and attempt to download
@@ -103,7 +103,7 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 					applicationId = rokuApp[0]
 					applicationName = rokuApp[2]
 					
-					self.hostPlugin.logDebugMessage(u'Attempting download of icon for App #' + applicationId + u' (' + applicationName + u')', RPFramework.RPFrameworkPlugin.DEBUGLEVEL_MED)
+					self.hostPlugin.logger.debug(u'Attempting download of icon for App #' + applicationId + u' (' + applicationName + u')')
 					conn = httplib.HTTPConnection(deviceHTTPAddress[0], deviceHTTPAddress[1])
 					conn.connect()
 					request = conn.putrequest(u'GET', u'/query/icon/' + applicationId)
@@ -113,7 +113,7 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 					iconImageExtension = iconResponse.getheader(u'content-type').replace(u'image/', u'')
 					iconImageSaveFN = os.path.join(downloadDestination, u'RokuChannelIcon_' + applicationId + u'.' + iconImageExtension)
 					
-					self.hostPlugin.logDebugMessage(u'Saving icon to ' + iconImageSaveFN, RPFramework.RPFrameworkPlugin.DEBUGLEVEL_MED)
+					self.hostPlugin.logger.debug(u'Saving icon to ' + iconImageSaveFN)
 					iconFile = open(RPFramework.RPFrameworkUtils.to_str(iconImageSaveFN), "wb")
 					iconFile.write(iconResponse.read())
 					iconFile.close()
@@ -129,7 +129,7 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 	# RESTful device. It may connect via IP address or a host name
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	def getRESTfulDeviceAddress(self):
-		self.hostPlugin.logDebugMessage(u'IP address requested for Roku Device: ' + self.rokuNetworkAddress, RPFramework.RPFrameworkPlugin.DEBUGLEVEL_LOW)
+		self.hostPlugin.logger.debug(u'IP address requested for Roku Device: ' + self.rokuNetworkAddress)
 			
 		# if the ip address has not been filled in then we must look it up by serialNumber
 		# via the SSDP service
@@ -158,7 +158,7 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 				enumeratedSerial = string.replace(rokuDevice.usn, 'uuid:roku:ecp:', '')
 				if enumeratedSerial == serialNumber:
 					discoveredIPAddress = re.match(r'http://([\d\.]*)\:{0,1}(\d+)', rokuDevice.location, re.I).group(1)
-					self.hostPlugin.logDebugMessage(u'Found IP address of ' + discoveredIPAddress + u' for serial #' + serialNumber, RPFramework.RPFrameworkPlugin.DEBUGLEVEL_MED)
+					self.hostPlugin.logger.debug(u'Found IP address of ' + discoveredIPAddress + u' for serial #' + serialNumber)
 					self.cachedIPAddress = discoveredIPAddress
 					self.indigoDevice.updateStateOnServer(u'lastDiscoveredIPAddress', value=discoveredIPAddress)
 					return discoveredIPAddress
@@ -167,10 +167,10 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 			# to read the last known IP address, then bail with a failure to find
 			if self.indigoDevice.states.get(u'lastDiscoveredIPAddress', u'') != u'':
 				lastKnownIP = self.indigoDevice.states.get(u'lastDiscoveredIPAddress')
-				self.hostPlugin.logDebugMessage(u'Using last discovered IP address: ' + lastKnownIP, RPFramework.RPFrameworkPlugin.DEBUGLEVEL_MED)
+				self.hostPlugin.logger.debug(u'Using last discovered IP address: ' + lastKnownIP)
 				return lastKnownIP
 			else:
-				self.hostPlugin.logDebugMessage(u'IP not found for serial #' + serialNumber, RPFramework.RPFrameworkPlugin.DEBUGLEVEL_LOW)
+				self.hostPlugin.logger.error(u'IP not found for serial #' + serialNumber)
 				return u''
 		else:
 			return self.cachedIPAddress
@@ -191,7 +191,7 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 				
 			# send a GET to the roku which should result in a list of applications
 			# available (in XML format)
-			self.hostPlugin.logDebugMessage(u'Sending /query/apps request to ' + deviceIPAddress[0], RPFramework.RPFrameworkPlugin.DEBUGLEVEL_MED)
+			self.hostPlugin.logger.debug(u'Sending /query/apps request to ' + deviceIPAddress[0])
 			conn = httplib.HTTPConnection(deviceIPAddress[0], int(deviceIPAddress[1]))
 			conn.connect()
 			request = conn.putrequest("GET", "/query/apps")
@@ -201,7 +201,7 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 			responseToREST = conn.getresponse()
 			responseStatus = responseToREST.status
 			bodyText = responseToREST.read()
-			self.hostPlugin.logDebugMessage(u'App list response: ' + RPFramework.RPFrameworkUtils.to_unicode(responseStatus) + u'; body: ' + bodyText, RPFramework.RPFrameworkPlugin.DEBUGLEVEL_HIGH)
+			self.hostPlugin.logger.threaddebug(u'App list response: ' + RPFramework.RPFrameworkUtils.to_unicode(responseStatus) + u'; body: ' + bodyText)
 			
 			# parse out the XML returned which should be in the format of:
 			#	<apps>
