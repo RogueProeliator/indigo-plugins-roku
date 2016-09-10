@@ -100,6 +100,7 @@ import RPFrameworkIndigoParam
 import RPFrameworkNetworkingUPnP
 from dataAccess import indigosql
 import Queue
+import shutil
 import socket
 from subprocess import call
 import time
@@ -236,6 +237,12 @@ class RPFrameworkPlugin(indigo.PluginBase):
 		# parse the RPFramework plugin configuration XML provided for this plugin,
 		# if it is present
 		self.parseRPFrameworkConfig(pluginDisplayName.replace(u' Plugin', u''))
+		
+		# perform any upgrade steps if the plugin is running for the first time after
+		# an upgrade
+		oldPluginVersion = pluginPrefs.get(u'loadedPluginVersion', u'')
+		if oldPluginVersion != unicode(pluginVersion):
+			self.performPluginUpgradeMaintenance(oldPluginVersion, unicode(pluginVersion))
 		
 		# initialization is complete...
 		self.pluginIsInitializing = False
@@ -553,7 +560,13 @@ class RPFrameworkPlugin(indigo.PluginBase):
 			self.logger.threaddebug(u'Customizing Events.xml')
 			pluginUpdateEvent = u'<Event id="pluginUpdateAvailable"><Name>Plugin Update Available</Name></Event>'
 			fileXml = fileXml.replace(u'[UPDATENOTIFICATION]', pluginUpdateEvent)
-			
+		
+		elif filename.endswith("PluginConfig.xml"):
+			# ****************** PLUGIN CONFIG ******************
+			self.logger.threaddebug(u'Customizing PluginConfig.xml')
+			versionNumberSetting = u'<Field id="loadedPluginVersion type="textfield" hidden="true"><Label /></Field>'
+			fileXml = fileXml.replace(u'</PluginConfig>', versionNumberSetting + u'</PluginConfig>')
+		
 		return fileXml
 	
 	
@@ -825,70 +838,114 @@ class RPFrameworkPlugin(indigo.PluginBase):
 	def checkVersionNow(self):
 		self.logger.debug(u'Version check initiated')
 		
-		# save the last check time (now) in the plugin's config and our class variable
-		timeNow = time.time()
-		self.pluginPrefs[u'updaterLastCheck'] = timeNow
-		self.nextUpdateCheck = timeNow + self.secondsBetweenUpdateChecks
+		try:
+			# save the last check time (now) in the plugin's config and our class variable
+			timeNow = time.time()
+			self.pluginPrefs[u'updaterLastCheck'] = timeNow
+			self.nextUpdateCheck = timeNow + self.secondsBetweenUpdateChecks
 
-		# use the updater to check for an update now
-		updateAvailable = self.updateChecker.checkForUpdate()
+			# use the updater to check for an update now
+			updateAvailable = self.updateChecker.checkForUpdate()
 		
-		if updateAvailable:
-			# execute any defined Updates triggers
-			if TRIGGER_UPDATEAVAILABLE_TYPEID in self.indigoEvents:
-				for trigger in self.indigoEvents[TRIGGER_UPDATEAVAILABLE_TYPEID].values():
-					indigo.trigger.execute(trigger)
+			if updateAvailable:
+				# execute any defined Updates triggers
+				if TRIGGER_UPDATEAVAILABLE_TYPEID in self.indigoEvents:
+					for trigger in self.indigoEvents[TRIGGER_UPDATEAVAILABLE_TYPEID].values():
+						indigo.trigger.execute(trigger)
 					
-			# TODO: Re-enable plugin update email!
-			# if execution made it this far then an update is available and we need to send
-			# the user an update email, if so configured
-			emailAddress = self.pluginPrefs.get(u'updaterEmail', u'')
-			if len(emailAddress) == 0:
-				self.logger.debug(u'No email address for updates found in the config')
+				# TODO: Re-enable plugin update email!
+				# if execution made it this far then an update is available and we need to send
+				# the user an update email, if so configured
+				emailAddress = self.pluginPrefs.get(u'updaterEmail', u'')
+				if len(emailAddress) == 0:
+					self.logger.debug(u'No email address for updates found in the config')
 
-			# if there's a checkbox in the config in addition to the email address text box
-			# then let the checkbox decide if we should send emails or not
-			if self.pluginPrefs.get(u'updaterEmailsEnabled', True) is False:
-				emailAddress = u''
+				# if there's a checkbox in the config in addition to the email address text box
+				# then let the checkbox decide if we should send emails or not
+				if self.pluginPrefs.get(u'updaterEmailsEnabled', True) is False:
+					emailAddress = u''
 
-			# if we do not have an email address, or emailing is disabled, then exit
-			if len(emailAddress) == 0:
-				return True
+				# if we do not have an email address, or emailing is disabled, then exit
+				if len(emailAddress) == 0:
+					return True
 
-			# get last version Emailed to the user
-			lastVersionEmailed = self.pluginPrefs.get(u'updaterLastVersionEmailed', '0')
+				# get last version Emailed to the user
+				lastVersionEmailed = self.pluginPrefs.get(u'updaterLastVersionEmailed', '0')
 
-			# if we already notified the user of this version then bail so that we don'time
-			# duplicate the notification
-			if lastVersionEmailed == self.updateChecker.latestReleaseFound:
-				self.logger.threaddebug(u'Version notification already emailed to the user about this version')
-				return True
+				# if we already notified the user of this version then bail so that we don'time
+				# duplicate the notification
+				if lastVersionEmailed == self.updateChecker.latestReleaseFound:
+					self.logger.threaddebug(u'Version notification already emailed to the user about this version')
+					return True
 
-			# build the email subject and body for sending to the user
-			try:
-				gitHubConfig = ConfigParser.RawConfigParser()
-				gitHubConfig.read('UpdaterConfig.cfg')
-				repositoryName = gitHubConfig.get('repository', 'name')
-				emailSubject = gitHubConfig.get('update-email', 'subject')				
-				versionHistory = requests.get('https://raw.githubusercontent.com/RogueProeliator/' + repositoryName + '/master/VERSION_HISTORY.txt')
+				# build the email subject and body for sending to the user
+				try:
+					gitHubConfig = ConfigParser.RawConfigParser()
+					gitHubConfig.read('UpdaterConfig.cfg')
+					repositoryName = gitHubConfig.get('repository', 'name')
+					emailSubject = gitHubConfig.get('update-email', 'subject')				
+					versionHistory = requests.get('https://raw.githubusercontent.com/RogueProeliator/' + repositoryName + '/master/VERSION_HISTORY.txt')
 
-				# Save this version as the last one emailed in the prefs
-				self.pluginPrefs[u'updaterLastVersionEmailed'] = self.updateChecker.latestReleaseFound
+					# Save this version as the last one emailed in the prefs
+					self.pluginPrefs[u'updaterLastVersionEmailed'] = self.updateChecker.latestReleaseFound
 
-				indigo.server.sendEmailTo(emailAddress, subject=emailSubject, body=versionHistory.text)
-			except:
-				self.logger.warning(u'Updater Error: Error sending update notification.')
-				if self.debugLevel > DEBUGLEVEL_NONE:
-					self.logger.exception()
+					indigo.server.sendEmailTo(emailAddress, subject=emailSubject, body=versionHistory.text)
+				except:
+					if self.debugLevel > DEBUGLEVEL_NONE:
+						self.logger.exception(u'Updater Error: Error sending update notification.')
+					else:
+						self.logger.warning(u'Updater Error: Error sending update notification.')
 				
-			# return true in order to indicate to any caller that an update
-			# was found/processed
-			return True
+				# return true in order to indicate to any caller that an update
+				# was found/processed
+				return True
 			
+			else:
+				# no update was available...
+				return False
+		except:
+			if self.debugLevel > DEBUGLEVEL_NONE:
+				self.logger.exception(u'Error checking for new plugin version.')
+			else:
+				self.logger.warning(u'Error checking for new plugin version.')
+			
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	# This routine is called whenever the plugin is updating from an older version, as
+	# determined by the plugin property and plugin version number
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	def performPluginUpgradeMaintenance(self, oldVersion, newVersion):
+		if oldVersion == u'':
+			self.logger.info(u'Performing first upgrade/run of version ' + newVersion)
 		else:
-			# no update was available...
-			return False
-	
+			self.logger.info(u'Performing upgrade from ' + oldVersion + ' to ' + newVersion)
+			
+		# execute the version-specific tasks
+		if oldVersion == u'':
+			# this is the first run of the plugin or the first run of the Indigo 7
+			# version... remove unused Requests module if it is present
+			pluginBasePath = os.getcwd()
+			rpFrameworkRequestsPath = os.path.join(pluginBasePath, "RPFramework/requests")
+			if os.path.isdir(rpFrameworkRequestsPath):
+				try:
+					self.logger.debug(u'Removing unused directory tree at ' + rpFrameworkRequestsPath)
+					shutil.rmtree(rpFrameworkRequestsPath)
+				except:
+					self.logger.exception(u'Failed to remove legacy "requests" from RPFramework directory')
+					
+		# allow the descendant classes to perform their own upgrade options
+		self.performPluginUpgrade(oldVersion, newVersion)
+		
+		# update the version flag within our plugin
+		self.pluginPrefs['loadedPluginVersion'] = newVersion
+		self.logger.debug(u'Completed plugin updating/installation for ' + newVersion)
+		
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	# This routine may be used by plugins to perform any upgrades specific to the plugin;
+	# it will be called following the framework's update processing
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	def performPluginUpgrade(self, oldVersion, newVersion):
+		pass
+				
 	
 	#/////////////////////////////////////////////////////////////////////////////////////
 	# Data Validation functions... these functions allow the plugin or devices to validate
