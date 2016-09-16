@@ -12,18 +12,20 @@
 #	Version 1.0:
 #		* Initial release of the plugin to Indigo users
 #	Version 1.1:
-#		* Integrated plugin into the RPFramewrok
-#		* Changed network addressing to a single device property; devices should auto
+#		Integrated plugin into the RPFramewrok
+#		Changed network addressing to a single device property; devices should auto
 #		  upgrade to the new format
-#		* Changed post-command delays to only fire when multiple commands are fired
-#		* Updated post-command delays with shorter defaults
+#		Changed post-command delays to only fire when multiple commands are fired
+#		Updated post-command delays with shorter defaults
 #	Version 1.2:
-#		* Fixed bug with downloading channel icons
+#		Fixed bug with downloading channel icons
 #	Version 1.3:
-#		* Updated application list parser to work with newest Roku 3 software
+#		Updated application list parser to work with newest Roku 3 software
 #	Version 1.4:
-#		* Lowered case text sent to Roku so it all passes validation
-#		* Reduced wait time when the queue is empty after a command has executed
+#		Lowered case text sent to Roku so it all passes validation
+#		Reduced wait time when the queue is empty after a command has executed
+#	Version 2.0.1:
+#		Updated API to use Indigo 7 API calls
 #
 #/////////////////////////////////////////////////////////////////////////////////////////
 #/////////////////////////////////////////////////////////////////////////////////////////

@@ -3,7 +3,7 @@ This Indigo 6.1+ plugin allows Indigo to act as a remote control for a network-c
 
 Note that the protocol exposed by the Roku devices, and utilized by this plugin, does not allow for state information about the Roku to be obtained (such as what current application/channel is active or what screen the Roku is currently showing).
 
-_**INDIGO 6 IMPORTANT NOTE:**_ The Indigo 6 version of this plugin is end-of-life with respect to new development, however the latest stable version on Indigo 6 is still available on the releases page and is working as expected at the moment. Please consider an upgrade to Indigo 7 to support further development of our favorite HA platform!
+_**INDIGO 6 IMPORTANT NOTE:**_ The Indigo 6 version of this plugin is end-of-life with respect to new development, however the latest stable version on Indigo 6 is [still available](https://github.com/RogueProeliator/IndigoPlugins-Roku-Network-Remote/releases/tag/v1.6.19) on the releases page and is working as expected at the moment. Please consider an upgrade to Indigo 7 to support further development of our favorite HA platform!
 
 #Hardware Requirements
 This plugin should work with any Roku streaming player; you must be on Firmware version 2.8 in order to utilize the plugin's ability to download the channel icons for use on control pages.
