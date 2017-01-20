@@ -201,7 +201,7 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 			responseToREST = conn.getresponse()
 			responseStatus = responseToREST.status
 			bodyText = responseToREST.read()
-			self.hostPlugin.logger.threaddebug(u'App list response: ' + RPFramework.RPFrameworkUtils.to_unicode(responseStatus) + u'; body: ' + bodyText)
+			self.hostPlugin.logger.threaddebug(u'App list response: ' + RPFramework.RPFrameworkUtils.to_unicode(responseStatus) + u'; body: ' + RPFramework.RPFrameworkUtils.to_unicode(bodyText))
 			
 			# parse out the XML returned which should be in the format of:
 			#	<apps>

@@ -14,14 +14,26 @@
 					<Option value="Fwd">Forward</Option>
 					<Option value="Home">Home</Option>
 					<Option value="Info">Info</Option>
+					<Option value="InputTuner">Input - Tuner (Roku TV)</Option>
+					<Option value="InputAV1">Input - AV1 (Roku TV)</Option>
+					<Option value="InputHDMI1">Input - HDMI 1 (Roku TV)</Option>
+					<Option value="InputHDMI2">Input - HDMI 2 (Roku TV)</Option>
+					<Option value="InputHDMI3">Input - HDMI 3 (Roku TV)</Option>
+					<Option value="InputHDMI4">Input - HDMI 4 (Roku TV)</Option>
 					<Option value="InstantReplay">Instant Replay</Option>
 					<Option value="Left">Left</Option>
 					<Option value="Play">Play</Option>
+					<Option value="PowerOff">Power Off (Roku TV)</Option>
+					<Option value="PowerOn">Power On (Roku TV)</Option>
+					<Option value="Power">Power Toggle (Roku TV)</Option>
 					<Option value="Rev">Reverse</Option>
 					<Option value="Right">Right</Option>
 					<Option value="Search">Search</Option>
 					<Option value="Select">Select</Option>
 					<Option value="Up">Up</Option>
+					<Option value="VolumeDown">Volume Down (Roku TV)</Option>
+					<Option value="VolumeMute">Volume Mute Toggle (Roku TV)</Option>
+					<Option value="VolumeUp">Volume Up (Roku TV)</Option>
 				</List>
 			</Field>
 			<Field type="textfield" id="repeatCount" defaultValue="1">
