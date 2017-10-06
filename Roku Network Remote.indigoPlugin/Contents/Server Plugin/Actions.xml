@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <Actions>
-	<Action id="remoteButtonToRoku" deviceFilter="self">
+	<Action id="remoteButtonToRoku" uiPath="DeviceActions" deviceFilter="self">
 		<Name>Send button-pressed command to Roku</Name>
 		<CallbackMethod>executeAction</CallbackMethod>
 		<ConfigUI>
@@ -41,7 +41,7 @@
 			</Field>
 		</ConfigUI>
 	</Action>
-	<Action id="sendKeyboardString" deviceFilter="self">
+	<Action id="sendKeyboardString" uiPath="DeviceActions" deviceFilter="self">
 		<Name>Send a string of text to Roku</Name>
 		<CallbackMethod>executeAction</CallbackMethod>
 		<ConfigUI>
@@ -53,9 +53,9 @@
 			</Field>
 		</ConfigUI>
 	</Action>
-	<Action id="sep01" />
+	<Action id="sep01" uiPath="DeviceActions"  />
 	
-	<Action id="launchChannel" deviceFilter="self">
+	<Action id="launchChannel" uiPath="DeviceActions" deviceFilter="self">
 		<Name>Launch a channel/application on Roku</Name>
 		<CallbackMethod>executeAction</CallbackMethod>
 		<ConfigUI>
@@ -68,7 +68,7 @@
 			</Field>
 		</ConfigUI>
 	</Action>
-	<Action id="performSearchOnChannel" deviceFilter="self">
+	<Action id="performSearchOnChannel" uiPath="DeviceActions" deviceFilter="self">
 		<Name>Perform a search on a channel</Name>
 		<CallbackMethod>performSearchOnChannel</CallbackMethod>
 		<ConfigUI>
@@ -96,9 +96,9 @@
 			</Field>
 		</ConfigUI>
 	</Action>
-	<Action id="sep02" />
+	<Action id="sep02" uiPath="DeviceActions"  />
 	
-	<Action id="downloadChannelIcons" deviceFilter="self">
+	<Action id="downloadChannelIcons" uiPath="DeviceActions" deviceFilter="self">
 		<Name>Download Channel Icons</Name>
 		<CallbackMethod>executeAction</CallbackMethod>
 		<ConfigUI>
