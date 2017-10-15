@@ -6,6 +6,9 @@ To update to the latest version of the application, please download the latest r
 =================================
 VERSION HISTORY
 =================================
+Version 2.2.1 [October 2017]:
+* Standardized menu text to add "..." for items generating a popup UI
+
 Version 2.2.0 [October 2017]:
 * Reorganized Actions under Device Actions sub menu
 * Misc. minor enhancements
