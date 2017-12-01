@@ -7,7 +7,7 @@ To update to the latest version of the application, please download the latest r
 VERSION HISTORY
 =================================
 Version 2.2.2 [November 2017]:
-Updated the plugin structure to as well as several UI elements. No significant functionality changes were added.
+* Updated the plugin structure to as well as several UI elements. No significant functionality changes were added.
 
 Version 2.2.1 [October 2017]:
 * Standardized menu text to add "..." for items generating a popup UI
