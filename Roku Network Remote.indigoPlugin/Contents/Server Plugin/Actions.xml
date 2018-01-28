@@ -7,6 +7,8 @@
 			<Field type="menu" id="buttonSelect">
 				<Label>Button to Press:</Label>
 				<List>
+					<Option value="A">A</Option>
+					<Option value="B">B</Option>
 					<Option value="Back">Back</Option>
 					<Option value="Backspace">Backspace</Option>
 					<Option value="Down">Down</Option>
