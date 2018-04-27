@@ -207,7 +207,7 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 			#	<apps>
 			#	<app id="[id]">[appname]</app>
 			# note that this may not be standard XML... so use a regular expression to parse
-			reAppParser = re.compile("\<app id=\"(\d+)\"\s*(?:type=\"[\w]+\"){0,1}\s*version=\"([\d\.]+)\"\>(.*)\</app\>")
+			reAppParser = re.compile("\<app id=\"(\d+)\"\s*(?:subtype=\"[\w]+\"){0,1}\s*(?:type=\"[\w]+\"){0,1}\s*version=\"([\d\.]+)\"\>(.*)\</app\>")
 			appMatches = reAppParser.findall(bodyText)
 			return appMatches
 		except:
