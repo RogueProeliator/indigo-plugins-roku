@@ -46,11 +46,32 @@
 				<Label/>
 			</Field>
 		</ConfigUI>
+		<UiDisplayStateId>isPoweredOn</UiDisplayStateId>
 		<States>
 			<State id="lastDiscoveredIPAddress">
 				<ValueType>String</ValueType>
 				<TriggerLabel>Last Resolved IP Address</TriggerLabel>
 				<ControlPageLabel>Last Resolved IP Address</ControlPageLabel>
+			</State>
+			<State id="isPoweredOn">
+				<ValueType>Boolean</ValueType>
+				<TriggerLabel>Is Powered On</TriggerLabel>
+				<ControlPageLabel>Is Powered On</ControlPageLabel>
+			</State>
+			<State id="serialNumber">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Serial Number</TriggerLabel>
+				<ControlPageLabel>Serial Number</ControlPageLabel>
+			</State>
+			<State id="deviceModel">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Model</TriggerLabel>
+				<ControlPageLabel>Model</ControlPageLabel>
+			</State>
+			<State id="isTV">
+				<ValueType>Boolean</ValueType>
+				<TriggerLabel>Is Roku TV</TriggerLabel>
+				<ControlPageLabel>Is Roku TV</ControlPageLabel>
 			</State>
 		</States>
 	</Device>

@@ -31,10 +31,32 @@
 					<deviceAddressFormat><![CDATA[%ap:httpAddress%]]></deviceAddressFormat>
 					<deviceUPNPServiceId>roku:ecp</deviceUPNPServiceId>
 					<deviceUPNPSeachCacheTime>300</deviceUPNPSeachCacheTime>
+					<updateStatusPollerActionId>updateRokuStatus</updateStatusPollerActionId>
+					<updateStatusPollerIntervalProperty>updateInterval</updateStatusPollerIntervalProperty>
 				</guiConfiguration>
+				<deviceResponses>
+					<response id="deviceStatusQuery" respondToActionId="updateRokuStatus">
+						<criteriaFormatString></criteriaFormatString>
+						<matchExpression></matchExpression>
+						<effects>
+							<effect effectType="RESPONSE_EFFECT_CALLBACK">
+								<updateParam>updateDeviceStatusInfo</updateParam>
+								<updateValueFormat></updateValueFormat>
+							</effect>
+						</effects>
+					</response>
+				</deviceResponses>
 			</device>
 		</devices>
 		<actions>
+			<action indigoId="updateRokuStatus">
+				<commands>
+					<command>
+						<commandName>RESTFUL_GET</commandName>
+						<commandFormat><![CDATA[http|*|/query/device-info]]></commandFormat>
+					</command>
+				</commands>
+			</action>
 			<action indigoId="remoteButtonToRoku">
 				<commands>
 					<command>
@@ -131,11 +153,11 @@
 				<commands>
 					<command>
 						<commandName>RESTFUL_PUT</commandName>
-						<commandFormat>http|*|%ap:commandCode%</commandFormat>
+						<commandFormat>http|*|%ap:commandToSend%</commandFormat>
 					</command>
 				</commands>
 				<params>
-					<param indigoId="commandCode" paramType="ParamTypeString" isRequired="True">
+					<param indigoId="commandToSend" paramType="ParamTypeString" isRequired="True">
 						<invalidValueMessage><![CDATA[Please enter a command to send]]></invalidValueMessage>
 					</param>
 				</params>

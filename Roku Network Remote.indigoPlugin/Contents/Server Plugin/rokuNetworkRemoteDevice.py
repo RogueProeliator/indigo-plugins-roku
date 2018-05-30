@@ -21,6 +21,7 @@ import threading
 import telnetlib
 import time
 import urllib
+import xml.etree.ElementTree
 
 import indigo
 import RPFramework
@@ -63,6 +64,12 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 
 		self.cachedIPAddress = u''
 		self.hostPlugin.logger.debug(u'Roku Address is ' + self.rokuNetworkAddress)
+		
+		# add in updated/new states and properties
+		self.upgradedDeviceStates.append(u'isPoweredOn') 
+		self.upgradedDeviceStates.append(u'serialNumber')
+		self.upgradedDeviceStates.append(u'deviceModel')
+		self.upgradedDeviceStates.append(u'isTV')
 
 	
 	#/////////////////////////////////////////////////////////////////////////////////////
@@ -174,7 +181,30 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 				return u''
 		else:
 			return self.cachedIPAddress
-				
+			
+	
+	#/////////////////////////////////////////////////////////////////////////////////////
+	# Custom Response Handlers
+	#/////////////////////////////////////////////////////////////////////////////////////
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	# This callback is made whenever the plugin has received the response to a status
+	# request for a Roku device
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	def updateDeviceStatusInfo(self, responseObj, rpCommand):
+		deviceInfoDoc = xml.etree.ElementTree.fromstring(responseObj)
+		
+		isPoweredOn = deviceInfoDoc.find("power-mode").text == 'PowerOn'
+		serialNum = deviceInfoDoc.find("serial-number").text
+		deviceModel = deviceInfoDoc.find("model-name").text
+		isTv = deviceInfoDoc.find("is-tv").text
+		
+		statesToUpdate = []
+		statesToUpdate.append({ 'key' : u'isPoweredOn', 'value' : isPoweredOn })
+		statesToUpdate.append({ 'key' : u'serialNumber', 'value' : serialNum })
+		statesToUpdate.append({ 'key' : u'deviceModel', 'value' : deviceModel })
+		statesToUpdate.append({ 'key' : u'isTV', 'value' : isTv })
+		self.indigoDevice.updateStatesOnServer(statesToUpdate)
+		
 		
 	#/////////////////////////////////////////////////////////////////////////////////////
 	# Public command-interface functions
