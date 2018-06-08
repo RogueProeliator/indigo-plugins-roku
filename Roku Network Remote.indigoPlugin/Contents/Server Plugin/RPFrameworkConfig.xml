@@ -26,6 +26,11 @@
 						<defaultValue>0.05</defaultValue>
 						<invalidValueMessage><![CDATA[Please enter a valid pause time between 0 and 1]]></invalidValueMessage>
 					</param>
+					<param indigoId="updateInterval" paramType="ParamTypeInteger" isRequired="True">
+						<minValue>0</minValue>
+						<maxValue>99999</maxValue>
+						<invalidValueMessage><![CDATA[Please enter a valid polling time in seconds]]></invalidValueMessage>
+					</param>
 				</params>
 				<guiConfiguration>
 					<deviceAddressFormat><![CDATA[%ap:httpAddress%]]></deviceAddressFormat>
@@ -36,7 +41,7 @@
 				</guiConfiguration>
 				<deviceResponses>
 					<response id="deviceStatusQuery" respondToActionId="updateRokuStatus">
-						<criteriaFormatString></criteriaFormatString>
+						<criteriaFormatString><![CDATA[%cp:response%]]></criteriaFormatString>
 						<matchExpression></matchExpression>
 						<effects>
 							<effect effectType="RESPONSE_EFFECT_CALLBACK">
@@ -54,6 +59,10 @@
 					<command>
 						<commandName>RESTFUL_GET</commandName>
 						<commandFormat><![CDATA[http|*|/query/device-info]]></commandFormat>
+					</command>
+					<command>
+						<commandName>RESTFUL_GET</commandName>
+						<commandFormat><![CDATA[http|*|/query/active-app]]></commandFormat>
 					</command>
 				</commands>
 			</action>

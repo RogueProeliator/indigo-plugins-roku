@@ -70,6 +70,10 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 		self.upgradedDeviceStates.append(u'serialNumber')
 		self.upgradedDeviceStates.append(u'deviceModel')
 		self.upgradedDeviceStates.append(u'isTV')
+		self.upgradedDeviceStates.append(u'activeChannel')
+		self.upgradedDeviceStates.append(u'screensaverActive')
+		
+		self.upgradedDeviceProperties.append((u'updateInterval', '10'))
 
 	
 	#/////////////////////////////////////////////////////////////////////////////////////
@@ -193,17 +197,31 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 	def updateDeviceStatusInfo(self, responseObj, rpCommand):
 		deviceInfoDoc = xml.etree.ElementTree.fromstring(responseObj)
 		
-		isPoweredOn = deviceInfoDoc.find("power-mode").text == 'PowerOn'
-		serialNum = deviceInfoDoc.find("serial-number").text
-		deviceModel = deviceInfoDoc.find("model-name").text
-		isTv = deviceInfoDoc.find("is-tv").text
+		if deviceInfoDoc.tag == "device-info":
+			self.hostPlugin.logger.debug("Received device info query response")
+			isPoweredOn = deviceInfoDoc.find("power-mode").text == 'PowerOn'
+			serialNum = deviceInfoDoc.find("serial-number").text
+			deviceModel = deviceInfoDoc.find("model-name").text
+			isTv = deviceInfoDoc.find("is-tv").text
 		
-		statesToUpdate = []
-		statesToUpdate.append({ 'key' : u'isPoweredOn', 'value' : isPoweredOn })
-		statesToUpdate.append({ 'key' : u'serialNumber', 'value' : serialNum })
-		statesToUpdate.append({ 'key' : u'deviceModel', 'value' : deviceModel })
-		statesToUpdate.append({ 'key' : u'isTV', 'value' : isTv })
-		self.indigoDevice.updateStatesOnServer(statesToUpdate)
+			statesToUpdate = []
+			if isPoweredOn:
+				statesToUpdate.append({ 'key' : u'isPoweredOn', 'value' : 'On' })
+			else:
+				statesToUpdate.append({ 'key' : u'isPoweredOn', 'value' : 'Off' })
+			statesToUpdate.append({ 'key' : u'serialNumber', 'value' : serialNum })
+			statesToUpdate.append({ 'key' : u'deviceModel', 'value' : deviceModel })
+			statesToUpdate.append({ 'key' : u'isTV', 'value' : isTv })
+			self.indigoDevice.updateStatesOnServer(statesToUpdate)
+		elif deviceInfoDoc.tag == "active-app":
+			self.hostPlugin.logger.debug("Received active app query response")
+			appName = deviceInfoDoc.find("app").text
+			screenSaverOn = deviceInfoDoc.find("screensaver")
+			
+			statesToUpdate = []
+			statesToUpdate.append({ u'key' : u'activeChannel', u'value' : appName })
+			statesToUpdate.append({ u'key' : u'screensaverActive', u'value' : screenSaverOn is not None })
+			self.indigoDevice.updateStatesOnServer(statesToUpdate)
 		
 		
 	#/////////////////////////////////////////////////////////////////////////////////////

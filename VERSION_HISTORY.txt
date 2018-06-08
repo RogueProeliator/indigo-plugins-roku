@@ -6,6 +6,9 @@ To update to the latest version of the application, please download the latest r
 =================================
 VERSION HISTORY
 =================================
+Version 2.4.0 [May 2018]:
+* Added states for device statuses, including reading/saving power state, device model, is-TV, and active channel
+
 Version 2.3.0 [April 2018]:
 * Fixed issue with parsing the list of channels from the latest Roku software
 * Removed the update notification check

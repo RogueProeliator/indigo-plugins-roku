@@ -42,6 +42,15 @@
 			<Field id="rokuLiteralCommandPause" type="textfield" defaultValue="0.05">
 				<Label>Pause after text character sent:</Label>
 			</Field>
+			<Field id="performanceTitle" type="label" fontColor="darkGray" fontSize="small">
+				<Label>STATUS POLLING OPTIONS</Label>
+			</Field>
+			<Field id="updateInterval" type="textfield" defaultValue="10">
+				<Label>Status Update Interval (sec):</Label>
+			</Field>
+			<Field id="updateIntervalInstructions" type="label" fontSize="small" alignWithControl="true">
+				<Label>This interval, specified in seconds, determines how often the plugin attempts to read the status of all states of the receiver; this is used to update the plugin whenever a manual change has occurred (such as a change by the physical remote remote or buttons). Setting to 0 will disable status update polling.</Label>
+			</Field>
 			<Field id="address" type="textfield" hidden='true' >
 				<Label/>
 			</Field>
@@ -72,6 +81,16 @@
 				<ValueType>Boolean</ValueType>
 				<TriggerLabel>Is Roku TV</TriggerLabel>
 				<ControlPageLabel>Is Roku TV</ControlPageLabel>
+			</State>
+			<State id="activeChannel">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Current App</TriggerLabel>
+				<ControlPageLabel>Current App</ControlPageLabel>
+			</State>
+			<State id="screensaverActive">
+				<ValueType>Boolean</ValueType>
+				<TriggerLabel>Screen Saver On</TriggerLabel>
+				<ControlPageLabel>Screen Saver On</ControlPageLabel>
 			</State>
 		</States>
 	</Device>
