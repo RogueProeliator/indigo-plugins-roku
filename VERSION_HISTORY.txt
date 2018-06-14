@@ -6,6 +6,10 @@ To update to the latest version of the application, please download the latest r
 =================================
 VERSION HISTORY
 =================================
+Version 2.4.1 [June 2018]
+* Fixes issue with the status check when a Roku TV is set to power all the way off (not on standby)
+* Fixes issue with Device Dialog related to recent status check addition
+
 Version 2.4.0 [May 2018]:
 * Added states for device statuses, including reading/saving power state, device model, is-TV, and active channel
 
