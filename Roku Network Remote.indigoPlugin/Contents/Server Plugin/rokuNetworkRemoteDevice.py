@@ -22,6 +22,7 @@ import telnetlib
 import time
 import urllib
 import xml.etree.ElementTree
+import requests
 
 import indigo
 import RPFramework
@@ -222,6 +223,24 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 			statesToUpdate.append({ u'key' : u'activeChannel', u'value' : appName })
 			statesToUpdate.append({ u'key' : u'screensaverActive', u'value' : screenSaverOn is not None })
 			self.indigoDevice.updateStatesOnServer(statesToUpdate)
+			
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	# This routine will handle an error as thrown by the REST call... Some Roku devices
+	# return an Error 60 / device timeout when off
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-		
+	def handleRESTfulError(self, rpCommand, err, response=None):
+		if type(err).__name__ == u'ConnectionError':
+			# update the device to Off and/or offline
+			self.hostPlugin.logger.debug(u'Failed to contact device ' + RPFramework.RPFrameworkUtils.to_unicode(self.indigoDevice.id) + u'; device may be off.')
+			self.hostPlugin.logger.debug(RPFramework.RPFrameworkUtils.to_unicode(err))
+			
+			statesToUpdate = []
+			statesToUpdate.append({ u'key' : u'activeChannel', u'value' : u'' })
+			statesToUpdate.append({ u'key' : u'screensaverActive', u'value' : False })
+			statesToUpdate.append({ 'key' : u'isPoweredOn', 'value' : 'Off' })
+			self.indigoDevice.updateStatesOnServer(statesToUpdate)
+		else:	
+			super(RokuNetworkRemoteDevice, self).handleRESTfulError(rpCommand, err, response)
 		
 		
 	#/////////////////////////////////////////////////////////////////////////////////////
