@@ -772,9 +772,9 @@ class RPFrameworkPlugin(indigo.PluginBase):
 							return True
 					
  						# build the email subject and body for sending to the user
-						updateSubject = "New version of Indigo Plugin '{}' is available".format(self.pluginDisplayName)
-						updateBody = "{}\n{}\n\nTo update to the latest version of the application, please download the latest release available via the Indigo Plugin Store at {}.".format(
-								self.pluginDisplayName, plugin_dict["githubRepoUrl"], store_detail_url.format(plugin_dict["id"]))
+						updateSubject = "Version {} of {} Indigo Plugin available".format(latest_release["number"], self.pluginDisplayName)
+						updateBody = "{} v{}\nReleased: {}\n{}\n\nTo update to the latest version of the application, please download the latest release available via the Indigo Plugin Store at {}.".format(
+								self.pluginDisplayName, latest_release["number"], latest_release["releaseDate"], plugin_dict["githubRepoUrl"], store_detail_url.format(plugin_dict["id"]))
 					
  						# Save this version as the last one emailed in the prefs
 						self.pluginPrefs[u'updaterLastVersionEmailed'] = latest_release["number"]
