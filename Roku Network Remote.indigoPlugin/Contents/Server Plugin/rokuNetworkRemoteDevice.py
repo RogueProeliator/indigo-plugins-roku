@@ -152,6 +152,20 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 			
 		# return the IP address to the calling procedure...
 		return (ipAddress, 8060)
+		
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	# This routine will process any response from the device following the list of
+	# response objects defined for this device type. For telnet this will always be
+	# a text string
+	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	def handleDeviceTextResponse(self, responseObj, rpCommand):
+		# loop through the list of response definitions defined in the (base) class
+		# and determine if any match
+		responseText = responseObj.content
+		for rpResponse in self.hostPlugin.getDeviceResponseDefinitions(self.indigoDevice.deviceTypeId):
+			if rpResponse.isResponseMatch(responseText, rpCommand, self, self.hostPlugin):
+				self.hostPlugin.logger.threaddebug(u'Found response match: ' + RPFramework.RPFrameworkUtils.to_unicode(rpResponse.responseId))
+				rpResponse.executeEffects(responseText, rpCommand, self, self.hostPlugin)
 			
 			
 	#/////////////////////////////////////////////////////////////////////////////////////
