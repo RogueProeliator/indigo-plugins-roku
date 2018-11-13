@@ -6,6 +6,10 @@ To update to the latest version of the application, please download the latest r
 =================================
 VERSION HISTORY
 =================================
+Version 2.4.3 [November 2018]:
+* Fixes issue with status not parsing when certain Unicode characters are present
+* Adds Plugin Store update check
+
 Version 2.4.1 [June 2018]
 * Fixes issue with the status check when a Roku TV is set to power all the way off (not on standby)
 * Fixes issue with Device Dialog related to recent status check addition
