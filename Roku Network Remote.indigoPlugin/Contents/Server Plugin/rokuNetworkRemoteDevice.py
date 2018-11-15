@@ -163,6 +163,7 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 		# and determine if any match
 		responseText = responseObj.content
 		for rpResponse in self.hostPlugin.getDeviceResponseDefinitions(self.indigoDevice.deviceTypeId):
+			self.hostPlugin.logger.threaddebug(u'Checking Action ' + rpCommand.parentAction.indigoActionId + ' response against ' + rpResponse.responseId)
 			if rpResponse.isResponseMatch(responseText, rpCommand, self, self.hostPlugin):
 				self.hostPlugin.logger.threaddebug(u'Found response match: ' + RPFramework.RPFrameworkUtils.to_unicode(rpResponse.responseId))
 				rpResponse.executeEffects(responseText, rpCommand, self, self.hostPlugin)
