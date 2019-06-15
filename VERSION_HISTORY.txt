@@ -6,8 +6,9 @@ To update to the latest version of the application, please download the latest r
 =================================
 VERSION HISTORY
 =================================
-Version 2.4.5 [June 2018]:
+Version 2.4.6 [June 2019]:
 * Minor updates to version check (enabled for pre-7.1 systems)
+* Fix for status update failure on TCL Roku TVs
 
 Version 2.4.4 [November 2018]:
 * Fixes issue with status not parsing when certain Unicode characters are present
