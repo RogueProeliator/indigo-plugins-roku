@@ -70,6 +70,18 @@
 			</Field>
 		</ConfigUI>
 	</Action>
+	<Action id="tuneToStation" uiPath="DeviceActions" deviceFilter="self">
+		<Name>Set RokuTV Tuner Channel</Name>
+		<CallbackMethod>executeAction</CallbackMethod>
+		<ConfigUI>
+			<Field type="label" id="lblInstructions" fontSize="small">
+				<Label>Allows tuning the TV channel on a RokuTV device to a particular channel. Should be in numerical format and digital stations such as 1.1 are supported.</Label>
+			</Field>
+			<Field id="rokuTVChannel" type="textfield">
+				<Label>Channel:</Label>
+			</Field>
+		</ConfigUI>
+	</Action>
 
 	<Action id="sep02" uiPath="DeviceActions"  />
 	<Action id="downloadChannelIcons" uiPath="DeviceActions" deviceFilter="self">

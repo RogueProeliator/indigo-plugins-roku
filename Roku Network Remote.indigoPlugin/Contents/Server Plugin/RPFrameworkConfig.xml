@@ -114,6 +114,19 @@
 					</param>
 				</params>
 			</action>
+			<action indigoId="tuneToStation">
+				<commands>
+					<command>
+						<commandName>RESTFUL_PUT</commandName>
+						<commandFormat><![CDATA[http|*|/launch/tvinput.dtv?ch=%ap:rokuTVChannel%]]></commandFormat>
+					</command>
+				</commands>
+				<params>
+					<param indigoId="rokuTVChannel" paramType="ParamTypeFloat" isRequired="True">
+						<invalidValueMessage><![CDATA[Please enter a channel such as 1.2]]></invalidValueMessage>
+					</param>
+				</params>
+			</action>
 			<action indigoId="downloadChannelIcons">
 				<params>
 					<param indigoId="destinationOverride" paramType="ParamTypeOSDirectoryPath" isRequired="False">
@@ -133,7 +146,7 @@
 				<commands>
 					<command>
 						<commandName>RESTFUL_PUT</commandName>
-						<commandFormat>http|*|%ap:commandToSend%</commandFormat>
+						<commandFormat><![CDATA[http|*|%ap:commandToSend%]]></commandFormat>
 					</command>
 				</commands>
 				<params>

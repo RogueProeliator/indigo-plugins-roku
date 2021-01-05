@@ -73,6 +73,7 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 		self.upgradedDeviceStates.append(u'isTV')
 		self.upgradedDeviceStates.append(u'activeChannel')
 		self.upgradedDeviceStates.append(u'screensaverActive')
+		self.upgradedDeviceStates.append(u'activeTunerChannel')
 		
 		self.upgradedDeviceProperties.append((u'updateInterval', '10'))
 
@@ -135,6 +136,8 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 					if iconFile != None:
 						iconFile.close()
 					self.hostPlugin.exceptionLog()
+		else:
+			self.hostPlugin.logger.error(u'Received unknown command for device {0}: {1}'.format(self.indigoDevice.id, rpCommand.commandName))
 				
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This routine should return the HTTP address that will be used to connect to the
@@ -163,7 +166,14 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 		# and determine if any match
 		responseText = responseObj.content
 		for rpResponse in self.hostPlugin.getDeviceResponseDefinitions(self.indigoDevice.deviceTypeId):
-			self.hostPlugin.logger.threaddebug(u'Checking Action {0}  response against {1}'.format(rpCommand.parentAction.indigoActionId, rpResponse.responseId))
+			if rpCommand.parentAction is None:
+				actionId = ""
+			elif isinstance(rpCommand.parentAction, basestring):
+				actionId = rpCommand.parentAction
+			else:
+				actionId = rpCommand.parentAction.indigoActionId
+
+			self.hostPlugin.logger.threaddebug(u'Checking Action {0}  response against {1}'.format(actionId, rpResponse.respondToActionId))
 			if rpResponse.isResponseMatch(responseText, rpCommand, self, self.hostPlugin):
 				self.hostPlugin.logger.threaddebug(u'Found response match: {0}'.format(rpResponse.responseId))
 				rpResponse.executeEffects(responseText, rpCommand, self, self.hostPlugin)
@@ -228,7 +238,17 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 			statesToUpdate.append({ 'key' : u'serialNumber', 'value' : serialNum })
 			statesToUpdate.append({ 'key' : u'deviceModel', 'value' : deviceModel })
 			statesToUpdate.append({ 'key' : u'isTV', 'value' : isTv })
+
+			# if this device is a TV then we need to perform additional queries in order
+			# to pull in the tv/tuner information
+			if isTv == "true": 
+				self.hostPlugin.logger.threaddebug(u'Queuing TV query commands')
+				self.queueDeviceCommand(RPFramework.RPFrameworkCommand.RPFrameworkCommand(RPFramework.RPFrameworkRESTfulDevice.CMD_RESTFUL_GET, commandPayload=u'http|*|/query/tv-active-channel', parentAction=u'updateRokuStatus'))
+			else:
+				statesToUpdate.append({ u'key' : u'activeTunerChannel', u'value' : u'n/a' })
+
 			self.indigoDevice.updateStatesOnServer(statesToUpdate)
+
 		elif deviceInfoDoc.tag == "active-app":
 			self.hostPlugin.logger.debug("Received active app query response")
 			appName = deviceInfoDoc.find("app").text
@@ -237,6 +257,14 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 			statesToUpdate = []
 			statesToUpdate.append({ u'key' : u'activeChannel', u'value' : appName })
 			statesToUpdate.append({ u'key' : u'screensaverActive', u'value' : screenSaverOn is not None })
+			self.indigoDevice.updateStatesOnServer(statesToUpdate)
+
+		elif deviceInfoDoc.tag == "tv-channel":
+			self.hostPlugin.logger.debug(u"Received active channel query response")
+			channelNumber = deviceInfoDoc.find("channel").find("number").text
+			
+			statesToUpdate = []
+			statesToUpdate.append({ u'key' : u'activeTunerChannel', u'value' : channelNumber })
 			self.indigoDevice.updateStatesOnServer(statesToUpdate)
 			
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

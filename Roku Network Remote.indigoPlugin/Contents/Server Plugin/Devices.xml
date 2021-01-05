@@ -87,6 +87,11 @@
 				<TriggerLabel>Current App</TriggerLabel>
 				<ControlPageLabel>Current App</ControlPageLabel>
 			</State>
+			<State id="activeTunerChannel">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Current TV Channel</TriggerLabel>
+				<ControlPageLabel>Current TV Channel</ControlPageLabel>
+			</State>
 			<State id="screensaverActive">
 				<ValueType>Boolean</ValueType>
 				<TriggerLabel>Screen Saver On</TriggerLabel>
