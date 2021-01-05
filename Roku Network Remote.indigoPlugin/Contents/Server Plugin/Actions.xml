@@ -55,8 +55,8 @@
 			</Field>
 		</ConfigUI>
 	</Action>
+
 	<Action id="sep01" uiPath="DeviceActions"  />
-	
 	<Action id="launchChannel" uiPath="DeviceActions" deviceFilter="self">
 		<Name>Launch a channel/application on Roku</Name>
 		<CallbackMethod>executeAction</CallbackMethod>
@@ -70,36 +70,20 @@
 			</Field>
 		</ConfigUI>
 	</Action>
-	<Action id="performSearchOnChannel" uiPath="DeviceActions" deviceFilter="self">
-		<Name>Perform a search on a channel</Name>
-		<CallbackMethod>performSearchOnChannel</CallbackMethod>
+	<Action id="tuneToStation" uiPath="DeviceActions" deviceFilter="self">
+		<Name>Set RokuTV Tuner Channel</Name>
+		<CallbackMethod>executeAction</CallbackMethod>
 		<ConfigUI>
 			<Field type="label" id="lblInstructions" fontSize="small">
-				<Label>Please select the channel/application on which you wish to launch a search; note that this only works on certain channels, so not all channels on the Rokue may be shown below. If you wish to simply navigate to the search screen, leave the search term blank.</Label>
+				<Label>Allows tuning the TV channel on a RokuTV device to a particular channel. Should be in numerical format and digital stations such as 1.1 are supported.</Label>
 			</Field>
-			<Field id="rokuAppId" type="menu">
-				<Label>Roku Applications to Search:</Label>
-				<List class="self" filter="" method="retrieveSearchableRokuApps" />
-			</Field>
-			<Field type="textfield" id="searchText">
-				<Label>Search Term(s):</Label>
-			</Field>
-			<Field type="textfield" id="amazonPauseForLaunch" defaultValue="6.5" visibleBindingId="rokuAppId" visibleBindingValue="13">
-				<Label>Pause to allow launch:</Label>
-			</Field>
-			<Field type="checkbox" id="amazonStopAtSuggestions" defaultValue="false" visibleBindingId="rokuAppId" visibleBindingValue="13">
-				<Label>Stop at Search Suggestions:</Label>
-			</Field>
-			<Field type="textfield" id="netflixPauseForLaunch" defaultValue="9" visibleBindingId="rokuAppId" visibleBindingValue="12">
-				<Label>Pause to allow launch:</Label>
-			</Field>
-			<Field type="checkbox" id="netflixStopAtSuggestions" defaultValue="false" visibleBindingId="rokuAppId" visibleBindingValue="12">
-				<Label>Stop at Search Suggestions:</Label>
+			<Field id="rokuTVChannel" type="textfield">
+				<Label>Channel:</Label>
 			</Field>
 		</ConfigUI>
 	</Action>
+
 	<Action id="sep02" uiPath="DeviceActions"  />
-	
 	<Action id="downloadChannelIcons" uiPath="DeviceActions" deviceFilter="self">
 		<Name>Download Channel Icons</Name>
 		<CallbackMethod>executeAction</CallbackMethod>

@@ -6,6 +6,12 @@ To update to the latest version of the application, please download the latest r
 =================================
 VERSION HISTORY
 =================================
+Version 2.4.8 [January 2021]:
+* Added state to track the current tuner channel for Roku TV devices
+* Added action to tune the TV tuner to a specific channel for Roku TV devices
+* Minor UI consistency/clarity enhancements
+* Better string handling (slightly reduces resource usage)
+
 Version 2.4.6 [June 2019]:
 * Minor updates to version check (enabled for pre-7.1 systems)
 * Fix for status update failure on TCL Roku TVs

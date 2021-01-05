@@ -114,32 +114,16 @@
 					</param>
 				</params>
 			</action>
-			<action indigoId="performSearchOnChannel" deviceFilter="self">
+			<action indigoId="tuneToStation">
+				<commands>
+					<command>
+						<commandName>RESTFUL_PUT</commandName>
+						<commandFormat><![CDATA[http|*|/launch/tvinput.dtv?ch=%ap:rokuTVChannel%]]></commandFormat>
+					</command>
+				</commands>
 				<params>
-					<param indigoId="rokuAppId" paramType="ParamTypeString" isRequired="True">
-						<invalidValueMessage><![CDATA[Please select the channel/application to search]]></invalidValueMessage>
-					</param>
-					<param indigoId="searchText" paramType="ParamTypeString" isRequired="False">
-						<validationExpression><![CDATA[^[a-z\d ]+$]]></validationExpression>
-						<invalidValueMessage><![CDATA[Please enter only letters and numbers for the search term]]></invalidValueMessage>
-					</param>
-					<param indigoId="amazonPauseForLaunch" paramType="ParamTypeFloat" isRequired="False">
-						<minValue>0</minValue>
-						<maxValue>20</maxValue>
-						<defaultValue>6.5</defaultValue>
-						<invalidValueMessage><![CDATA[Please enter the number of seconds to pause for the channel to launch (0 to 20)]]></invalidValueMessage>
-					</param>
-					<param indigoId="amazonStopAtSuggestions" paramType="ParamTypeBoolean" isRequired="False">
-						<defaultValue>False</defaultValue>
-					</param>
-					<param indigoId="netflixPauseForLaunch" paramType="ParamTypeFloat" isRequired="False">
-						<minValue>0</minValue>
-						<maxValue>20</maxValue>
-						<defaultValue>9</defaultValue>
-						<invalidValueMessage><![CDATA[Please enter the number of seconds to pause for the channel to launch (0 to 20)]]></invalidValueMessage>
-					</param>
-					<param indigoId="netflixStopAtSuggestions" paramType="ParamTypeBoolean" isRequired="False">
-						<defaultValue>False</defaultValue>
+					<param indigoId="rokuTVChannel" paramType="ParamTypeFloat" isRequired="True">
+						<invalidValueMessage><![CDATA[Please enter a channel such as 1.2]]></invalidValueMessage>
 					</param>
 				</params>
 			</action>
@@ -162,7 +146,7 @@
 				<commands>
 					<command>
 						<commandName>RESTFUL_PUT</commandName>
-						<commandFormat>http|*|%ap:commandToSend%</commandFormat>
+						<commandFormat><![CDATA[http|*|%ap:commandToSend%]]></commandFormat>
 					</command>
 				</commands>
 				<params>
