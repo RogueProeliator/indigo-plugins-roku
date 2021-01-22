@@ -250,22 +250,38 @@ class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRE
 			self.indigoDevice.updateStatesOnServer(statesToUpdate)
 
 		elif deviceInfoDoc.tag == "active-app":
-			self.hostPlugin.logger.debug("Received active app query response")
-			appName = deviceInfoDoc.find("app").text
-			screenSaverOn = deviceInfoDoc.find("screensaver")
-			
-			statesToUpdate = []
-			statesToUpdate.append({ u'key' : u'activeChannel', u'value' : appName })
-			statesToUpdate.append({ u'key' : u'screensaverActive', u'value' : screenSaverOn is not None })
-			self.indigoDevice.updateStatesOnServer(statesToUpdate)
+			try:
+				self.hostPlugin.logger.debug("Received active app query response")
+				appName = deviceInfoDoc.find("app").text
+				screenSaverOn = deviceInfoDoc.find("screensaver")
+				
+				statesToUpdate = []
+				statesToUpdate.append({ u'key' : u'activeChannel', u'value' : appName })
+				statesToUpdate.append({ u'key' : u'screensaverActive', u'value' : screenSaverOn is not None })
+				self.indigoDevice.updateStatesOnServer(statesToUpdate)
+			except:
+				self.hostPlugin.logger.debug("Failed to parse active app query response")
+				statesToUpdate = []
+				statesToUpdate.append({ u'key' : u'activeChannel', u'value' : '-- error --' })
+				statesToUpdate.append({ u'key' : u'screensaverActive', u'value' : False })
+				self.indigoDevice.updateStatesOnServer(statesToUpdate)
 
 		elif deviceInfoDoc.tag == "tv-channel":
 			self.hostPlugin.logger.debug(u"Received active channel query response")
-			channelNumber = deviceInfoDoc.find("channel").find("number").text
-			
-			statesToUpdate = []
-			statesToUpdate.append({ u'key' : u'activeTunerChannel', u'value' : channelNumber })
-			self.indigoDevice.updateStatesOnServer(statesToUpdate)
+			try:
+				channelNode = deviceInfoDoc.find("channel")
+				if channelNode is None:
+					channelNumber = ''
+				else:
+					channelNumber = deviceInfoDoc.find("channel").find("number").text
+				
+				statesToUpdate = []
+				statesToUpdate.append({ u'key' : u'activeTunerChannel', u'value' : channelNumber })
+				self.indigoDevice.updateStatesOnServer(statesToUpdate)
+			except:
+				statesToUpdate = []
+				statesToUpdate.append({ u'key' : u'activeTunerChannel', u'value' : '-- error --' })
+				self.indigoDevice.updateStatesOnServer(statesToUpdate)
 			
 	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This routine will handle an error as thrown by the REST call... Some Roku devices

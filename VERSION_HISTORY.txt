@@ -6,6 +6,9 @@ To update to the latest version of the application, please download the latest r
 =================================
 VERSION HISTORY
 =================================
+Version 2.4.9 [January 2021]:
+* Fixed issue with empty return from active channel query against Roku TV API
+
 Version 2.4.8 [January 2021]:
 * Added state to track the current tuner channel for Roku TV devices
 * Added action to tune the TV tuner to a specific channel for Roku TV devices
