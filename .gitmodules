@@ -1,0 +1,3 @@
+[submodule "src/Roku Network Remote.indigoPlugin/Contents/Server Plugin/RPFramework"]
+	path = src/Roku Network Remote.indigoPlugin/Contents/Server Plugin/RPFramework
+	url = https://github.com/RogueProeliator/indigo-plugins-rpframework-src
