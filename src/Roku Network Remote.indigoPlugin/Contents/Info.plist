@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>PluginVersion</key>
-	<string>2.4.9</string>
+	<string>2023.4.0</string>
 	<key>ServerApiVersion</key>
-	<string>2.1.0</string>
+	<string>3.0.0</string>
 	<key>IwsApiVersion</key>
-	<string>1.0</string>
+	<string>1.0.0</string>
 	<key>CFBundleDisplayName</key>
 	<string>Roku Network Remote</string>
 	<key>CFBundleIdentifier</key>
@@ -18,7 +18,7 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>https://github.com/RogueProeliator/IndigoPlugins-Roku-Network-Remote/wiki</string>
+			<string>https://github.com/RogueProeliator/indigo-plugins-roku/wiki</string>
 		</dict>
 	</array>
 </dict>

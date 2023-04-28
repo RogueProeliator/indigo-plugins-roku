@@ -1,152 +1,118 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
-#/////////////////////////////////////////////////////////////////////////////////////////
-#/////////////////////////////////////////////////////////////////////////////////////////
+#######################################################################################
 # Roku Network Remote Control by RogueProeliator <rp@rogueproeliator.com>
-# 	Indigo plugin designed to allow control of Roku devices via control pages using
-#	Roku's built-in External Control Protocol (ECP) interface
-#	
-#	Command structure based on Roku's documentation:
-#	http://sdkdocs.roku.com/display/sdkdoc/External+Control+Guide
+# Indigo plugin designed to allow control of Roku devices via control pages using
+# Roku's built-in External Control Protocol (ECP) interface
 #
-#/////////////////////////////////////////////////////////////////////////////////////////
-#/////////////////////////////////////////////////////////////////////////////////////////
+# Command structure based on Roku's documentation:
+# http://sdkdocs.roku.com/display/sdkdoc/External+Control+Guide
+#######################################################################################
 
-
-#/////////////////////////////////////////////////////////////////////////////////////////
-# Python imports
-#/////////////////////////////////////////////////////////////////////////////////////////
-import logging
-import random
+# region Python imports
 import re
-import select
-import socket
 import string
-import telnetlib
-import os
 
 import RPFramework
 import rokuNetworkRemoteDevice
 
-
-#/////////////////////////////////////////////////////////////////////////////////////////
-# Constants and configuration variables
-#/////////////////////////////////////////////////////////////////////////////////////////
+from RPFramework.RPFrameworkPlugin import RPFrameworkPlugin
+# endregion
 
 
-#/////////////////////////////////////////////////////////////////////////////////////////
-#/////////////////////////////////////////////////////////////////////////////////////////
-# Plugin
-#	Primary Indigo plugin class that is universal for all devices (Roku instances) to be
-#	controlled
-#/////////////////////////////////////////////////////////////////////////////////////////
-#/////////////////////////////////////////////////////////////////////////////////////////
-class Plugin(RPFramework.RPFrameworkPlugin.RPFrameworkPlugin):
+class Plugin(RPFrameworkPlugin):
 
-	#/////////////////////////////////////////////////////////////////////////////////////
-	# Class construction and destruction methods
-	#/////////////////////////////////////////////////////////////////////////////////////
-	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	#######################################################################################
+	# region Class construction and destruction methods
+	# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# Constructor called once upon plugin class creation; setup the device tracking
 	# variables for later use
-	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-	def __init__(self, pluginId, pluginDisplayName, pluginVersion, pluginPrefs):
+	# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	def __init__(self, plugin_id, plugin_display_name, plugin_version, plugin_prefs):
 		# RP framework base class's init method
-		super(Plugin, self).__init__(pluginId, pluginDisplayName, pluginVersion, pluginPrefs, managedDeviceClassModule=rokuNetworkRemoteDevice, pluginSupportsUPNP=True)
+		super().__init__(plugin_id, plugin_display_name, plugin_version, plugin_prefs, managed_device_class_module=rokuNetworkRemoteDevice, supports_upnp=True)
 		
 		# create a list that will hold a cached version of the list of roku hardware
 		# devices found on the network
 		self.enumeratedRokuDevices = []
+
+	# endregion
+	#######################################################################################
 		
-		
-	#/////////////////////////////////////////////////////////////////////////////////////
-	# Data Validation functions... these functions allow the plugin or devices to validate
-	# user input
-	#/////////////////////////////////////////////////////////////////////////////////////		
-	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-	# This routine is called to parse out a uPNP search results list in order to createDeviceObject
-	# an indigo-friendly menu; usually will be overridden in plugin descendants
-	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-	
-	def parseUPNPDeviceList(self, deviceList):
+	#######################################################################################
+	# region Data Validation methods
+	# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	# This routine is called to parse out a uPNP search results list
+	# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	def parse_upnp_device_list(self, device_list):
 		try:
-			rokuOptions = []
+			roku_options = []
 		
-			for rokuDevice in deviceList:
-				serialNumber = string.replace(rokuDevice.usn, 'uuid:roku:ecp:', '')
-				ipAddress = re.match(r'http://([\d\.]*)\:{0,1}(\d+)', rokuDevice.location, re.I)
-				rokuOptions.append((RPFramework.RPFrameworkUtils.to_unicode(serialNumber), u'Serial #' + RPFramework.RPFrameworkUtils.to_unicode(serialNumber) + u' (Currently ' + RPFramework.RPFrameworkUtils.to_unicode(ipAddress.group(1)) + u')'))
-			return rokuOptions
+			for rokuDevice in device_list:
+				serial_number = string.replace(rokuDevice.usn, "uuid:roku:ecp:", "")
+				ip_address    = re.match(r"http://([\d\.]*)\:{0,1}(\d+)", rokuDevice.location, re.I)
+				roku_options.append((f"{serial_number}", f"Serial #{serial_number} (Currently {ip_address.group(1)})"))
+			return roku_options
 			
 		except:
 			if self.debugLevel == RPFramework.RPFrameworkPlugin.DEBUGLEVEL_HIGH:
 				self.exceptionLog()
 			return []	
 	
-	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This routine is called back to the plugin when the GUI action loads that allows
 	# launching a channel
-	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-	def retrieveRokuApps(self, filter=u'', valuesDict=None, typeId=u'', targetId=0):
+	# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	def retrieve_roku_apps(self, filter=u'', values_dict=None, type_id=u'', target_id=0):
 		try:
 			# use the roku device to retrieve the list of available applications
-			availableApps = self.managedDevices[targetId].retrieveAppList()
-			appOptions = []
+			available_apps = self.managed_devices[target_id].retrieveAppList()
+			app_options    = []
 			
-			for rokuApp in availableApps:
-				appId      = rokuApp[0]
-				appVersion = rokuApp[1]
-				appName    = rokuApp[2]
+			for rokuApp in available_apps:
+				app_id      = rokuApp[0]
+				app_version = rokuApp[1]
+				app_name    = rokuApp[2]
 				
-				appOptions.append((appId, appName))
+				app_options.append((app_id, app_name))
 			
-			return sorted(appOptions, key=lambda option: option[1])
+			return sorted(app_options, key=lambda option: option[1])
 		except:
 			self.exceptionLog()
 			return []
-			
-	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-	# This routine is called back to the plugin when the GUI action loads that allows
-	# launching a channel that will be searched
-	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-	def retrieveSearchableRokuApps(self, filter=u'', valuesDict=None, typeId=u'', targetId=0):
-		appsList = self.retrieveRokuApps(filter, valuesDict, typeId, targetId)
-		searchableAppsList = []
-		
-		for rokuApp in appsList:
-			if rokuApp[0] == u'13' or rokuApp[0] == u'12':
-				searchableAppsList.append(rokuApp)
-				
-		return searchableAppsList
-	
 
-	#/////////////////////////////////////////////////////////////////////////////////////
-	# Actions object callback handlers/routines
-	#/////////////////////////////////////////////////////////////////////////////////////
-	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-	
+	# endregion
+	#######################################################################################
+
+	#######################################################################################
+	# region Actions object callback handlers/routines
+	# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This routine will be called from the user executing the menu item action to send
 	# an arbitrary command code to the Onkyo receiver
-	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-	
-	def sendArbitraryCommand(self, valuesDict, typeId):
+	# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	def send_arbitrary_command(self, values_dict, type_id):
 		try:
-			deviceId = valuesDict.get(u'targetDevice', u'0')
-			commandCode = valuesDict.get(u'commandToSend', u'').strip()
+			device_id    = values_dict.get("targetDevice", "0")
+			command_code = values_dict.get("commandToSend", "").strip()
 		
-			if deviceId == u'' or deviceId == u'0':
+			if device_id == "" or device_id == "0":
 				# no device was selected
-				errorDict = indigo.Dict()
-				errorDict[u'targetDevice'] = u'Please select a device'
-				return (False, valuesDict, errorDict)
-			elif commandCode == u'':
-				errorDict = indigo.Dict()
-				errorDict[u'commandToSend'] = u'Enter command to send'
-				return (False, valuesDict, errorDict)
+				error_dict = indigo.Dict()
+				error_dict["targetDevice"] = "Please select a device"
+				return False, values_dict, error_dict
+			elif command_code == u'':
+				error_dict = indigo.Dict()
+				error_dict["commandToSend"] = "Enter command to send"
+				return False, values_dict, error_dict
 			else:
 				# send the code using the normal action processing...
-				actionParams = indigo.Dict()
-				actionParams[u'commandToSend'] = commandCode
-				self.executeAction(pluginAction=None, indigoActionId=u'sendArbitraryCommand', indigoDeviceId=int(deviceId), paramValues=actionParams)
-				return (True, valuesDict)
+				action_params = indigo.Dict()
+				action_params["commandToSend"] = command_code
+				self.executeAction(pluginAction=None, indigoActionId=u'sendArbitraryCommand', indigoDeviceId=int(device_id), paramValues=action_params)
+				return True, values_dict
 		except:
 			self.exceptionLog()
-			return (False, valuesDict)	
-	
+			return False, values_dict
+
+	# endregion
+	#######################################################################################

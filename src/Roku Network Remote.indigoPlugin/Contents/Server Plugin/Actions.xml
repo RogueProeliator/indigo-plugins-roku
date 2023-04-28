@@ -2,8 +2,15 @@
 <Actions>
 	<Action id="remoteButtonToRoku" uiPath="DeviceActions" deviceFilter="self">
 		<Name>Send button-pressed command to Roku</Name>
-		<CallbackMethod>executeAction</CallbackMethod>
+		<CallbackMethod>execute_action</CallbackMethod>
 		<ConfigUI>
+			<Field id="sendButtonPressTitle" type="label" fontColor="darkGray">
+				<Label>SEND BUTTON PRESS COMMAND</Label>
+			</Field>
+			<Field id="sendButtonPressSeparator" type="separator" />
+			<Field id="sendButtonPressSubInstructions" type="label" fontSize="small" alignWithControl="true">
+				<Label>This action will send a button press to the Roku as if it were done from the physical remote or mobile application.</Label>
+			</Field>
 			<Field type="menu" id="buttonSelect">
 				<Label>Button to Press:</Label>
 				<List>
@@ -45,10 +52,14 @@
 	</Action>
 	<Action id="sendKeyboardString" uiPath="DeviceActions" deviceFilter="self">
 		<Name>Send a string of text to Roku</Name>
-		<CallbackMethod>executeAction</CallbackMethod>
+		<CallbackMethod>execute_action</CallbackMethod>
 		<ConfigUI>
-			<Field type="label" id="sendStringInstructions" fontSize="small">
-				<Label>Any string with alphanumerical characters or punctuation may be sent to the Roku</Label>
+			<Field id="sendButtonPressTitle" type="label" fontColor="darkGray">
+				<Label>SEND TEXT STRINGS</Label>
+			</Field>
+			<Field id="sendTextSeparator" type="separator" />
+			<Field id="sendTextSubInstructions" type="label" fontSize="small" alignWithControl="true">
+				<Label>Any string with alphanumerical characters or punctuation may be sent to the Roku as if they were typed in via the mobile app.</Label>
 			</Field>
 			<Field type="textfield" id="rokuKeyboardText">
 				<Label>Text to Send:</Label>
@@ -59,22 +70,30 @@
 	<Action id="sep01" uiPath="DeviceActions"  />
 	<Action id="launchChannel" uiPath="DeviceActions" deviceFilter="self">
 		<Name>Launch a channel/application on Roku</Name>
-		<CallbackMethod>executeAction</CallbackMethod>
+		<CallbackMethod>execute_action</CallbackMethod>
 		<ConfigUI>
-			<Field type="label" id="lblInstructions" fontSize="small">
-				<Label>Please select the channel/application to launch on the Roku device; some channels may have additional options that will appear when selected.</Label>
+			<Field id="launchChannelTitle" type="label" fontColor="darkGray">
+				<Label>LAUNCH CHANNEL</Label>
+			</Field>
+			<Field id="launchChannelSeparator" type="separator" />
+			<Field id="launchChannelSubInstructions" type="label" fontSize="small" alignWithControl="true">
+				<Label>Requests the launch of a Roku channel.</Label>
 			</Field>
 			<Field id="rokuAppId" type="menu">
 				<Label>Roku Applications Available:</Label>
-				<List class="self" filter="" method="retrieveRokuApps" />
+				<List class="self" filter="" method="retrieve_roku_apps" />
 			</Field>
 		</ConfigUI>
 	</Action>
 	<Action id="tuneToStation" uiPath="DeviceActions" deviceFilter="self">
 		<Name>Set RokuTV Tuner Channel</Name>
-		<CallbackMethod>executeAction</CallbackMethod>
+		<CallbackMethod>execute_action</CallbackMethod>
 		<ConfigUI>
-			<Field type="label" id="lblInstructions" fontSize="small">
+			<Field id="setTunerTitle" type="label" fontColor="darkGray">
+				<Label>SET TV TUNER</Label>
+			</Field>
+			<Field id="setTunerSeparator" type="separator" />
+			<Field id="setTunerSubInstructions" type="label" fontSize="small" alignWithControl="true">
 				<Label>Allows tuning the TV channel on a RokuTV device to a particular channel. Should be in numerical format and digital stations such as 1.1 are supported.</Label>
 			</Field>
 			<Field id="rokuTVChannel" type="textfield">
@@ -86,9 +105,13 @@
 	<Action id="sep02" uiPath="DeviceActions"  />
 	<Action id="downloadChannelIcons" uiPath="DeviceActions" deviceFilter="self">
 		<Name>Download Channel Icons</Name>
-		<CallbackMethod>executeAction</CallbackMethod>
+		<CallbackMethod>execute_action</CallbackMethod>
 		<ConfigUI>
-			<Field type="label" id="lblInstructions" fontSize="small">
+			<Field id="downloadIconsTitle" type="label" fontColor="darkGray">
+				<Label>DOWNLOAD CHANNEL ICONS</Label>
+			</Field>
+			<Field id="downloadIconsSeparator" type="separator" />
+			<Field id="downloadIconsSubInstructions" type="label" fontSize="small" alignWithControl="true">
 				<Label>This action will download the icons for the list of the available channels to the Static Images folder used in Control Pages. You may change the destination to another directory below (blank out to set back to default).</Label>
 			</Field>
 			<Field type="textfield" id="destinationOverride">

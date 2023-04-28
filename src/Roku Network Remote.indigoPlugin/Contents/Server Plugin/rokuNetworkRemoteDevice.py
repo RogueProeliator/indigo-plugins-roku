@@ -1,90 +1,74 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
-#/////////////////////////////////////////////////////////////////////////////////////////
-#/////////////////////////////////////////////////////////////////////////////////////////
+#######################################################################################
 # Roku Network Remote Control by RogueProeliator <rp@rogueproeliator.com>
-# 	See plugin.py for more plugin details and information
-#/////////////////////////////////////////////////////////////////////////////////////////
-#/////////////////////////////////////////////////////////////////////////////////////////
+#######################################################################################
 
-#/////////////////////////////////////////////////////////////////////////////////////////
-# Python imports
-#/////////////////////////////////////////////////////////////////////////////////////////
-import functools
+# region Python Imports
 import httplib
 import os
-import Queue
 import re
 import string
-import sys
-import threading
-import telnetlib
-import time
 import urllib
 import xml.etree.ElementTree
-import requests
 
 import indigo
 import RPFramework
+from RPFramework.RPFrameworkRESTfulDevice import RPFrameworkRESTfulDevice
+# endregion
 
-#/////////////////////////////////////////////////////////////////////////////////////////
-#/////////////////////////////////////////////////////////////////////////////////////////
-# RokuNetworkRemoteDevice
-#	Handles the configuration of a single Roku device that is connected to this plugin;
-#	this class does all the 'grunt work' of communications with the Roku
-#/////////////////////////////////////////////////////////////////////////////////////////
-#/////////////////////////////////////////////////////////////////////////////////////////
-class RokuNetworkRemoteDevice(RPFramework.RPFrameworkRESTfulDevice.RPFrameworkRESTfulDevice):
 
-	#/////////////////////////////////////////////////////////////////////////////////////
-	# Class construction and destruction methods
-	#/////////////////////////////////////////////////////////////////////////////////////
-	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+class RokuNetworkRemoteDevice(RPFrameworkRESTfulDevice):
+
+	#######################################################################################
+	# region Class construction and destruction methods
+	# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# Constructor called once upon plugin class receiving a command to start device
 	# communication. The plugin will call other commands when needed, simply zero out the
 	# member variables
-	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	def __init__(self, plugin, device):
-		super(RokuNetworkRemoteDevice, self).__init__(plugin, device)
+		super().__init__(plugin, device)
 		
 		# get the device properties; we may need to upgrade users from the old version of
 		# addresses to the new version
-		devProps = self.indigoDevice.pluginProps
+		dev_props = self.indigoDevice.pluginProps
 		
-		tempRokuIPAddress = devProps.get(u'rokuIPAddress', u'')
-		tempRokuSerialNumber = devProps.get(u'rokuEnumeratedUSN', u'')
-		if tempRokuIPAddress != u'':
-			devProps[u'httpAddress']   = tempRokuIPAddress
-			devProps[u'rokuIPAddress'] = u''
-			device.replacePluginPropsOnServer(devProps)
-		elif tempRokuSerialNumber != u'':
-			devProps[u'httpAddress']       = tempRokuSerialNumber
-			devProps[u'rokuEnumeratedUSN'] = u''
-			device.replacePluginPropsOnServer(devProps)
-		self.rokuNetworkAddress = devProps.get(u'httpAddress', u'')
+		temp_roku_ip_address    = dev_props.get("rokuIPAddress", "")
+		temp_roku_serial_number = dev_props.get("rokuEnumeratedUSN", "")
+		if temp_roku_ip_address != "":
+			dev_props["httpAddress"]   = temp_roku_ip_address
+			dev_props["rokuIPAddress"] = ""
+			device.replacePluginPropsOnServer(dev_props)
+		elif temp_roku_serial_number != "":
+			dev_props["httpAddress"]       = temp_roku_serial_number
+			dev_props["rokuEnumeratedUSN"] = ""
+			device.replacePluginPropsOnServer(dev_props)
+		self.rokuNetworkAddress = dev_props.get("httpAddress", "")
 
-		self.cachedIPAddress = u''
-		self.hostPlugin.logger.debug(u'Roku Address is ' + self.rokuNetworkAddress)
+		self.cachedIPAddress = ""
+		self.hostPlugin.logger.debug(f"Roku Address is {self.rokuNetworkAddress}")
 		
 		# add in updated/new states and properties
-		self.upgradedDeviceStates.append(u'isPoweredOn') 
-		self.upgradedDeviceStates.append(u'serialNumber')
-		self.upgradedDeviceStates.append(u'deviceModel')
-		self.upgradedDeviceStates.append(u'isTV')
-		self.upgradedDeviceStates.append(u'activeChannel')
-		self.upgradedDeviceStates.append(u'screensaverActive')
-		self.upgradedDeviceStates.append(u'activeTunerChannel')
+		self.upgradedDeviceStates.append("isPoweredOn")
+		self.upgradedDeviceStates.append("serialNumber")
+		self.upgradedDeviceStates.append("deviceModel")
+		self.upgradedDeviceStates.append("isTV")
+		self.upgradedDeviceStates.append("activeChannel")
+		self.upgradedDeviceStates.append("screensaverActive")
+		self.upgradedDeviceStates.append("activeTunerChannel")
 		
-		self.upgradedDeviceProperties.append((u'updateInterval', '10'))
+		self.upgradedDeviceProperties.append(("updateInterval", "10"))
 
+	# endregion
+	#######################################################################################
 	
-	#/////////////////////////////////////////////////////////////////////////////////////
-	# Processing and command functions
-	#/////////////////////////////////////////////////////////////////////////////////////
-	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	#######################################################################################
+	# region Processing and command functions
+	# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This routine will process the commands that are not processed automatically by the
 	# base class; it will be called on a concurrent thread
-	#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	def handleUnmanagedCommandInQueue(self, deviceHTTPAddress, rpCommand):
 		if rpCommand.commandName == u'SEND_KEYBOARD_STRING':
 			# needs to send a string of text to the roku device as a series of keypress
