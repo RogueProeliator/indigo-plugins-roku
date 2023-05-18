@@ -45,7 +45,7 @@
 						<matchExpression></matchExpression>
 						<effects>
 							<effect effectType="RESPONSE_EFFECT_CALLBACK">
-								<updateParam>updateDeviceStatusInfo</updateParam>
+								<updateParam>update_device_status_info</updateParam>
 								<updateValueFormat></updateValueFormat>
 							</effect>
 						</effects>

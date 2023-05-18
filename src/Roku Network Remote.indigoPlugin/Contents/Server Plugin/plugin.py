@@ -11,12 +11,11 @@
 
 # region Python imports
 import re
-import string
 
-import RPFramework
 import rokuNetworkRemoteDevice
 
 from RPFramework.RPFrameworkPlugin import RPFrameworkPlugin
+from RPFramework.RPFrameworkPlugin import DEBUGLEVEL_HIGH
 # endregion
 
 
@@ -34,7 +33,7 @@ class Plugin(RPFrameworkPlugin):
 		
 		# create a list that will hold a cached version of the list of roku hardware
 		# devices found on the network
-		self.enumeratedRokuDevices = []
+		self.enumerated_roku_devices = []
 
 	# endregion
 	#######################################################################################
@@ -48,22 +47,22 @@ class Plugin(RPFrameworkPlugin):
 		try:
 			roku_options = []
 		
-			for rokuDevice in device_list:
-				serial_number = string.replace(rokuDevice.usn, "uuid:roku:ecp:", "")
-				ip_address    = re.match(r"http://([\d\.]*)\:{0,1}(\d+)", rokuDevice.location, re.I)
+			for roku_device in device_list:
+				serial_number = roku_device.usn.replace("uuid:roku:ecp:", "")
+				ip_address    = re.match(r"http://([\d\.]*)\:{0,1}(\d+)", roku_device.location, re.I)
 				roku_options.append((f"{serial_number}", f"Serial #{serial_number} (Currently {ip_address.group(1)})"))
 			return roku_options
 			
 		except:
-			if self.debugLevel == RPFramework.RPFrameworkPlugin.DEBUGLEVEL_HIGH:
-				self.exceptionLog()
+			if self.debugLevel == DEBUGLEVEL_HIGH:
+				self.logger.exception("Failed to enumerate devices")
 			return []	
 	
 	# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	# This routine is called back to the plugin when the GUI action loads that allows
 	# launching a channel
 	# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-	def retrieve_roku_apps(self, filter=u'', values_dict=None, type_id=u'', target_id=0):
+	def retrieve_roku_apps(self, filter="", values_dict=None, type_id="", target_id=0):
 		try:
 			# use the roku device to retrieve the list of available applications
 			available_apps = self.managed_devices[target_id].retrieveAppList()
@@ -78,7 +77,7 @@ class Plugin(RPFrameworkPlugin):
 			
 			return sorted(app_options, key=lambda option: option[1])
 		except:
-			self.exceptionLog()
+			self.logger.exception("Failed to retrieve Roku Apps")
 			return []
 
 	# endregion
@@ -100,7 +99,7 @@ class Plugin(RPFrameworkPlugin):
 				error_dict = indigo.Dict()
 				error_dict["targetDevice"] = "Please select a device"
 				return False, values_dict, error_dict
-			elif command_code == u'':
+			elif command_code == "":
 				error_dict = indigo.Dict()
 				error_dict["commandToSend"] = "Enter command to send"
 				return False, values_dict, error_dict
@@ -108,7 +107,7 @@ class Plugin(RPFrameworkPlugin):
 				# send the code using the normal action processing...
 				action_params = indigo.Dict()
 				action_params["commandToSend"] = command_code
-				self.executeAction(pluginAction=None, indigoActionId=u'sendArbitraryCommand', indigoDeviceId=int(device_id), paramValues=action_params)
+				self.executeAction(pluginAction=None, indigoActionId="sendArbitraryCommand", indigoDeviceId=int(device_id), paramValues=action_params)
 				return True, values_dict
 		except:
 			self.exceptionLog()
