@@ -3,12 +3,12 @@
 #######################################################################################
 # Roku Network Remote Control by RogueProeliator <rp@rogueproeliator.com>
 #######################################################################################
-import shutil
 
 # region Python Imports
 import os
 import re
 import requests
+import shutil
 import urllib
 import xml.etree.ElementTree
 
