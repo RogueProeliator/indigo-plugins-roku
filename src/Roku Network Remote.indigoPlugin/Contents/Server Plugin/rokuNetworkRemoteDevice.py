@@ -169,8 +169,8 @@ class RokuNetworkRemoteDevice(RPFrameworkRESTfulDevice):
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     def obtain_roku_ip_address(self, serial_number):
         if self.cached_ip_address == u'':
-            self.host_plugin.updateUPNPEnumerationList(self.indigoDevice.deviceTypeId)
-            roku_list = self.host_plugin.enumeratedDevices
+            self.host_plugin.update_upnp_enumeration_list(self.indigoDevice.deviceTypeId)
+            roku_list = self.host_plugin.enumerated_devices
             for rokuDevice in roku_list:
                 enumerated_serial = rokuDevice.usn.replace("uuid:roku:ecp:", "")
                 if enumerated_serial == serial_number:
