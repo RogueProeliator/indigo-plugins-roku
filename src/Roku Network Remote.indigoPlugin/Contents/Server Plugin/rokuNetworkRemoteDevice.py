@@ -126,7 +126,7 @@ class RokuNetworkRemoteDevice(RPFrameworkRESTfulDevice):
 
         # if the ip address has not been filled in then we must look it up by serialNumber
         # via the SSDP service
-        if self.host_plugin.isIPv4Valid(self.roku_network_address):
+        if self.host_plugin.is_ip_v4_valid(self.roku_network_address):
             ip_address = self.roku_network_address
         else:
             ip_address = self.obtain_roku_ip_address(self.roku_network_address)
