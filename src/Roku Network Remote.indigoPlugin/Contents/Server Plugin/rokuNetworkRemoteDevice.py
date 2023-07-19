@@ -144,12 +144,12 @@ class RokuNetworkRemoteDevice(RPFrameworkRESTfulDevice):
         # and determine if any match
         response_text = response_obj.content
         for rpResponse in self.host_plugin.get_device_response_definitions(self.indigoDevice.deviceTypeId):
-            if rp_command.parentAction is None:
+            if rp_command.parent_action is None:
                 action_id = ""
-            elif isinstance(rp_command.parentAction, str):
-                action_id = rp_command.parentAction
+            elif isinstance(rp_command.parent_action, str):
+                action_id = rp_command.parent_action
             else:
-                action_id = rp_command.parentAction.indigoActionId
+                action_id = rp_command.parent_action.indigoActionId
 
             self.host_plugin.logger.threaddebug(f"Checking Action {action_id}  response against {rpResponse.respond_to_action_id}")
             if rpResponse.isResponseMatch(response_text, rp_command, self, self.host_plugin):
