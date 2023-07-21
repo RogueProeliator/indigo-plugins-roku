@@ -71,21 +71,21 @@ class RokuNetworkRemoteDevice(RPFrameworkRESTfulDevice):
     # base class; it will be called on a concurrent thread
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     def handle_unmanaged_command_in_queue(self, device_http_address, rp_command):
-        if rp_command.commandName == "SEND_KEYBOARD_STRING":
+        if rp_command.command_name == "SEND_KEYBOARD_STRING":
             # needs to send a string of text to the roku device as a series of keypress
             # commands (RESTFUL_PUT commands)
-            validated_text = re.sub(r'[^a-z\d ]', "", rp_command.commandPayload.lower())
+            validated_text = re.sub(r'[^a-z\d ]', "", rp_command.command_payload.lower())
             if validated_text == "":
-                self.host_plugin.logger.debug(f"Ignoring send text to Roku, validated string is blank (source: {rp_command.commandPayload})")
+                self.host_plugin.logger.debug(f"Ignoring send text to Roku, validated string is blank (source: {rp_command.command_payload})")
             else:
                 self.host_plugin.logger.threaddebug(f"Sending keyboard text: {validated_text}")
                 pause_between_keys = float(self.indigoDevice.pluginProps.get("rokuLiteralCommandPause", "0.1"))
                 for char in validated_text:
                     self.queue_device_command(RPFrameworkCommand(RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, command_payload=f"http|*|/keypress/Lit_{urllib.quote_plus(char)}", post_command_pause=pause_between_keys))
 
-        elif rp_command.commandName == u'DOWNLOAD_CHANNEL_ICONS':
+        elif rp_command.command_name == "DOWNLOAD_CHANNEL_ICONS":
             # the user has requested that we download the icons for channels on the Roku device...
-            download_destination = rp_command.commandPayload
+            download_destination = rp_command.command_payload
             if download_destination is None or download_destination == "":
                 download_destination = indigo.server.getInstallFolderPath()
                 self.host_plugin.logger.threaddebug(f"Indigo installation folder: {download_destination}")
@@ -152,9 +152,9 @@ class RokuNetworkRemoteDevice(RPFrameworkRESTfulDevice):
                 action_id = rp_command.parent_action.indigoActionId
 
             self.host_plugin.logger.threaddebug(f"Checking Action {action_id}  response against {rpResponse.respond_to_action_id}")
-            if rpResponse.isResponseMatch(response_text, rp_command, self, self.host_plugin):
+            if rpResponse.is_response_match(response_text, rp_command, self, self.host_plugin):
                 self.host_plugin.logger.threaddebug(f"Found response match: {rpResponse.respond_to_action_id}")
-                rpResponse.executeEffects(response_text, rp_command, self, self.host_plugin)
+                rpResponse.execute_effects(response_text, rp_command, self, self.host_plugin)
 
     # endregion
     #######################################################################################
