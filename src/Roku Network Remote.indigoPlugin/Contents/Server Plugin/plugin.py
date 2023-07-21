@@ -65,7 +65,7 @@ class Plugin(RPFrameworkPlugin):
 	def retrieve_roku_apps(self, filter="", values_dict=None, type_id="", target_id=0):
 		try:
 			# use the roku device to retrieve the list of available applications
-			available_apps = self.managed_devices[target_id].retrieveAppList()
+			available_apps = self.managed_devices[target_id].retrieve_app_list()
 			app_options    = []
 			
 			for rokuApp in available_apps:
@@ -107,10 +107,10 @@ class Plugin(RPFrameworkPlugin):
 				# send the code using the normal action processing...
 				action_params = indigo.Dict()
 				action_params["commandToSend"] = command_code
-				self.executeAction(pluginAction=None, indigoActionId="sendArbitraryCommand", indigoDeviceId=int(device_id), paramValues=action_params)
+				self.execute_action(pluginAction=None, indigoActionId="sendArbitraryCommand", indigoDeviceId=int(device_id), paramValues=action_params)
 				return True, values_dict
 		except:
-			self.exceptionLog()
+			self.logger.exception()
 			return False, values_dict
 
 	# endregion

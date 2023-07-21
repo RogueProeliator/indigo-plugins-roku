@@ -9,7 +9,7 @@ import os
 import re
 import requests
 import shutil
-import urllib
+import urllib.parse
 import xml.etree.ElementTree
 
 import indigo
@@ -81,7 +81,7 @@ class RokuNetworkRemoteDevice(RPFrameworkRESTfulDevice):
                 self.host_plugin.logger.threaddebug(f"Sending keyboard text: {validated_text}")
                 pause_between_keys = float(self.indigoDevice.pluginProps.get("rokuLiteralCommandPause", "0.1"))
                 for char in validated_text:
-                    self.queue_device_command(RPFrameworkCommand(RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, command_payload=f"http|*|/keypress/Lit_{urllib.quote_plus(char)}", post_command_pause=pause_between_keys))
+                    self.queue_device_command(RPFrameworkCommand(RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, command_payload=f"http|*|/keypress/Lit_{urllib.parse.quote(char)}", post_command_pause=pause_between_keys))
 
         elif rp_command.command_name == "DOWNLOAD_CHANNEL_ICONS":
             # the user has requested that we download the icons for channels on the Roku device...
@@ -102,14 +102,18 @@ class RokuNetworkRemoteDevice(RPFrameworkRESTfulDevice):
                     application_name = rokuApp[2]
 
                     self.host_plugin.logger.debug(f"Attempting download of icon for App #{application_id} ({application_name})")
-                    icon_response        = requests.get(f"http://{device_http_address[0]}:{device_http_address[1]}/query/icon/{application_id}")
+                    icon_response = requests.get(f"http://{device_http_address[0]}:{device_http_address[1]}/query/icon/{application_id}", stream=True)
                     icon_image_extension = icon_response.headers["content-type"].replace("image/", "")
-                    icon_image_save_fn   = os.path.join(download_destination, f"RokuChannelIcon_{application_id}.{icon_image_extension}")
+                    icon_image_save_fn = os.path.join(download_destination, f"RokuChannelIcon_{application_id}.{icon_image_extension}")
 
-                    self.host_plugin.logger.debug(f"Saving icon to {icon_image_save_fn}")
-                    with open(icon_image_save_fn, "wb") as icon_file:
-                        icon_response.raw.decode_content = True
-                        shutil.copyfileobj(icon_response.raw, icon_file)
+                    if icon_response.status_code == 200:
+                        self.host_plugin.logger.debug(f"Saving icon to {icon_image_save_fn}")
+                        with open(icon_image_save_fn, "wb") as icon_file:
+                            icon_response.raw.decode_content = True
+                            shutil.copyfileobj(icon_response.raw, icon_file)
+                    else:
+                        self.host_plugin.logger.error(
+                            f"Received status code [{icon_response.status_code}] whiled downloading channel icon")
                 except:
                     if icon_file is not None:
                         icon_file.close()
