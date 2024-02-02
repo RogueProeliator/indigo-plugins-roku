@@ -4,13 +4,6 @@
 		<Name>Send button-pressed command to Roku</Name>
 		<CallbackMethod>execute_action</CallbackMethod>
 		<ConfigUI>
-			<Field id="sendButtonPressTitle" type="label" fontColor="darkGray">
-				<Label>SEND BUTTON PRESS COMMAND</Label>
-			</Field>
-			<Field id="sendButtonPressSeparator" type="separator" />
-			<Field id="sendButtonPressSubInstructions" type="label" fontSize="small" alignWithControl="true">
-				<Label>This action will send a button press to the Roku as if it were done from the physical remote or mobile application.</Label>
-			</Field>
 			<Field type="menu" id="buttonSelect">
 				<Label>Button to Press:</Label>
 				<List>
@@ -54,15 +47,11 @@
 		<Name>Send a string of text to Roku</Name>
 		<CallbackMethod>execute_action</CallbackMethod>
 		<ConfigUI>
-			<Field id="sendButtonPressTitle" type="label" fontColor="darkGray">
-				<Label>SEND TEXT STRINGS</Label>
-			</Field>
-			<Field id="sendTextSeparator" type="separator" />
-			<Field id="sendTextSubInstructions" type="label" fontSize="small" alignWithControl="true">
-				<Label>Any string with alphanumerical characters or punctuation may be sent to the Roku as if they were typed in via the mobile app.</Label>
-			</Field>
 			<Field type="textfield" id="rokuKeyboardText">
 				<Label>Text to Send:</Label>
+			</Field>
+			<Field id="sendTextSubInstructions" type="label" fontSize="small">
+				<Label>Any string with alphanumerical characters or punctuation may be sent to the Roku as if they were typed in via the mobile app.</Label>
 			</Field>
 		</ConfigUI>
 	</Action>
@@ -72,15 +61,8 @@
 		<Name>Launch a channel/application on Roku</Name>
 		<CallbackMethod>execute_action</CallbackMethod>
 		<ConfigUI>
-			<Field id="launchChannelTitle" type="label" fontColor="darkGray">
-				<Label>LAUNCH CHANNEL</Label>
-			</Field>
-			<Field id="launchChannelSeparator" type="separator" />
-			<Field id="launchChannelSubInstructions" type="label" fontSize="small" alignWithControl="true">
-				<Label>Requests the launch of a Roku channel.</Label>
-			</Field>
 			<Field id="rokuAppId" type="menu">
-				<Label>Roku Applications Available:</Label>
+				<Label>Application:</Label>
 				<List class="self" filter="" method="retrieve_roku_apps" />
 			</Field>
 		</ConfigUI>
@@ -89,15 +71,11 @@
 		<Name>Set RokuTV Tuner Channel</Name>
 		<CallbackMethod>execute_action</CallbackMethod>
 		<ConfigUI>
-			<Field id="setTunerTitle" type="label" fontColor="darkGray">
-				<Label>SET TV TUNER</Label>
-			</Field>
-			<Field id="setTunerSeparator" type="separator" />
-			<Field id="setTunerSubInstructions" type="label" fontSize="small" alignWithControl="true">
-				<Label>Allows tuning the TV channel on a RokuTV device to a particular channel. Should be in numerical format and digital stations such as 1.1 are supported.</Label>
-			</Field>
 			<Field id="rokuTVChannel" type="textfield">
 				<Label>Channel:</Label>
+			</Field>
+			<Field id="setTunerSubInstructions" type="label" fontSize="small">
+				<Label>Allows tuning the TV channel on a RokuTV device to a particular channel. Should be in numerical format and digital stations such as 1.1 are supported.</Label>
 			</Field>
 		</ConfigUI>
 	</Action>

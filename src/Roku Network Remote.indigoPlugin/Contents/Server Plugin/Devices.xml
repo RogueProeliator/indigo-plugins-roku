@@ -2,8 +2,8 @@
 <Devices>
 
 	<!-- a simple, one-way Roku network remote... it does not attempt to actively -->
-	<!-- communicate Roku status due to limitations of the Roku External Control -->
-	<!-- Protocol -->
+	<!-- communicate Roku status due to limitations of the Roku External Control  -->
+	<!-- Protocol                                                                 -->
 	<Device type="custom" id="rokuRemoteDevice">
 		<Name>Roku Network Remote Control</Name>
 		<ConfigUI>	
