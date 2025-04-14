@@ -16,12 +16,14 @@
 			</Field>
 			<Field id="upnpEnumeratedDevices" type="menu">
 				<Label>Devices Found:</Label>
-				<List class="self" filter="" method="getConfigDialogUPNPDeviceMenu" />
+				<!-- Method updated to point to the new plugin method -->
+				<List class="self" filter="" method="get_discovered_device_list_for_menu" />
 			</Field>
 			<Field id="selectEnumeratedDevice" type="button" enabledBindingId="upnpEnumeratedDevices">
 				<Label></Label>
 				<Title>Use Selected Device</Title>
-				<CallbackMethod>selectUPNPEnumeratedDeviceForUse</CallbackMethod>
+				<!-- Method updated to point to the new plugin method -->
+				<CallbackMethod>select_discovered_device_for_config</CallbackMethod>
 			</Field>
 			<Field id="httpAddress" type="textfield">
 				<Label>Hostname or IP Address:</Label>	

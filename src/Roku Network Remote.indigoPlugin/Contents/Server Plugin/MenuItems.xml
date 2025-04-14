@@ -46,7 +46,8 @@
 	</MenuItem>
 	<MenuItem id="debugUPNPDevicesFound">
 		<Name>Perform UPnP Search...</Name>
-		<CallbackMethod>log_upnp_devices_found</CallbackMethod>
+		<!-- Method updated to point to the new plugin method -->
+		<CallbackMethod>log_discovered_devices_menu_item</CallbackMethod> 
 		<ButtonTitle>Search</ButtonTitle>
 		<ConfigUI>
 			<Field type="label" id="logUPnPDevicesInstructions" fontSize="small">

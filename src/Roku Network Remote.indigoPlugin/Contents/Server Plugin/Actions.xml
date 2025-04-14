@@ -2,7 +2,7 @@
 <Actions>
 	<Action id="remoteButtonToRoku" uiPath="DeviceActions" deviceFilter="self">
 		<Name>Send button-pressed command to Roku</Name>
-		<CallbackMethod>execute_action</CallbackMethod>
+		<!-- CallbackMethod removed; Indigo calls actionControlDevice directly -->
 		<ConfigUI>
 			<Field type="menu" id="buttonSelect">
 				<Label>Button to Press:</Label>
@@ -45,7 +45,7 @@
 	</Action>
 	<Action id="sendKeyboardString" uiPath="DeviceActions" deviceFilter="self">
 		<Name>Send a string of text to Roku</Name>
-		<CallbackMethod>execute_action</CallbackMethod>
+		<!-- CallbackMethod removed; Indigo calls actionControlDevice directly -->
 		<ConfigUI>
 			<Field type="textfield" id="rokuKeyboardText">
 				<Label>Text to Send:</Label>
@@ -59,17 +59,18 @@
 	<Action id="sep01" uiPath="DeviceActions"  />
 	<Action id="launchChannel" uiPath="DeviceActions" deviceFilter="self">
 		<Name>Launch a channel/application on Roku</Name>
-		<CallbackMethod>execute_action</CallbackMethod>
+		<!-- CallbackMethod removed; Indigo calls actionControlDevice directly -->
 		<ConfigUI>
 			<Field id="rokuAppId" type="menu">
 				<Label>Application:</Label>
-				<List class="self" filter="" method="retrieve_roku_apps" />
+				<!-- Method updated to point to the new plugin method -->
+				<List class="self" filter="" method="get_channel_list_for_menu" />
 			</Field>
 		</ConfigUI>
 	</Action>
 	<Action id="tuneToStation" uiPath="DeviceActions" deviceFilter="self">
 		<Name>Set RokuTV Tuner Channel</Name>
-		<CallbackMethod>execute_action</CallbackMethod>
+		<!-- CallbackMethod removed; Indigo calls actionControlDevice directly -->
 		<ConfigUI>
 			<Field id="rokuTVChannel" type="textfield">
 				<Label>Channel:</Label>
@@ -83,7 +84,7 @@
 	<Action id="sep02" uiPath="DeviceActions"  />
 	<Action id="downloadChannelIcons" uiPath="DeviceActions" deviceFilter="self">
 		<Name>Download Channel Icons</Name>
-		<CallbackMethod>execute_action</CallbackMethod>
+		<!-- CallbackMethod removed; Indigo calls actionControlDevice directly -->
 		<ConfigUI>
 			<Field id="downloadIconsTitle" type="label" fontColor="darkGray">
 				<Label>DOWNLOAD CHANNEL ICONS</Label>

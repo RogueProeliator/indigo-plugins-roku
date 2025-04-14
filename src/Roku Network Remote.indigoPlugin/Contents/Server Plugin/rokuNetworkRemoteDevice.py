@@ -13,13 +13,16 @@ import urllib.parse
 import xml.etree.ElementTree
 
 import indigo
-from RPFramework.RPFrameworkCommand import RPFrameworkCommand
-from RPFramework.RPFrameworkRESTfulDevice import RPFrameworkRESTfulDevice
+import logging
+import queue
+import threading
+import time
+import xml.etree.ElementTree as ET
 
 # endregion
 
 
-class RokuNetworkRemoteDevice(RPFrameworkRESTfulDevice):
+class RokuNetworkRemoteDevice(indigo.Device):
 
     #######################################################################################
     # region Class construction and destruction methods
@@ -28,8 +31,19 @@ class RokuNetworkRemoteDevice(RPFrameworkRESTfulDevice):
     # communication. The plugin will call other commands when needed, simply zero out the
     # member variables
     # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    def __init__(self, plugin, device):
-        super().__init__(plugin, device)
+    def __init__(self, device):
+        indigo.Device.__init__(self, device)
+
+        self.logger = logging.getLogger(f"Plugin.Roku.{self.id}")
+
+        self.command_queue = queue.Queue()
+        self.command_thread = None
+        self.stop_thread = threading.Event()
+
+        self.cached_ip_address = ""
+        self.app_list_cache = []
+        self.last_app_list_update = 0
+        self.plugin = indigo.server.getPlugin(self.pluginId) # Get plugin instance for shared methods/data
 
         # get the device properties; we may need to upgrade users from the old version of
         # addresses to the new version
@@ -48,275 +62,436 @@ class RokuNetworkRemoteDevice(RPFrameworkRESTfulDevice):
         self.roku_network_address = dev_props.get("httpAddress", "")
 
         self.cached_ip_address = ""
-        self.host_plugin.logger.debug(f"Roku Address is {self.roku_network_address}")
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    def deviceStartComm(self):
+        self.logger.debug("deviceStartComm called")
+        self.stop_thread.clear()
+        if not self.command_thread or not self.command_thread.is_alive():
+            self.command_thread = threading.Thread(target=self._command_processing_loop)
+            self.command_thread.start()
+        self.queue_command({'type': 'status_update'}) # Initial status fetch
 
-        # add in updated/new states and properties
-        self.upgraded_device_states.append("isPoweredOn")
-        self.upgraded_device_states.append("serialNumber")
-        self.upgraded_device_states.append("deviceModel")
-        self.upgraded_device_states.append("isTV")
-        self.upgraded_device_states.append("activeChannel")
-        self.upgraded_device_states.append("screensaverActive")
-        self.upgraded_device_states.append("activeTunerChannel")
+    def deviceStopComm(self):
+        self.logger.debug("deviceStopComm called")
+        self.stop_thread.set()
+        self.command_queue.put(None) 
+        if self.command_thread and self.command_thread.is_alive():
+            self.logger.debug("Waiting for command thread to stop...")
+            self.command_thread.join(timeout=5.0) # Wait max 5 seconds
+            if self.command_thread.is_alive():
+                self.logger.warning("Command thread did not stop gracefully.")
+            else:
+                self.logger.debug("Command thread stopped.")
+        self.command_thread = None
 
-        self.upgraded_device_properties.append(("updateInterval", "10"))
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    def actionControlDevice(self, action):
+        self.logger.debug(f"actionControlDevice called: {action.pluginTypeId}")
+        
+        action_id = action.pluginTypeId
+        props = action.props
+
+        if action_id == "remoteButtonToRoku":
+            button = props.get("remoteButton", "")
+            if button:
+                self.queue_command({'type': 'keypress', 'path': f"keypress/{button}"})
+            else:
+                self.logger.error("Missing 'remoteButton' property for remoteButtonToRoku action.")
+
+        elif action_id == "sendKeyboardString":
+            text = props.get("keyboardStringToSend", "")
+            if text:
+                self.queue_command({'type': 'send_string', 'payload': text})
+            else:
+                self.logger.error("Missing 'keyboardStringToSend' property for sendKeyboardString action.")
+
+        elif action_id == "launchChannel":
+            channel_id = props.get("channelToLaunch", "")
+            if channel_id:
+                self.queue_command({'type': 'launch', 'path': f"launch/{channel_id}"})
+            else:
+                self.logger.error("Missing 'channelToLaunch' property for launchChannel action.")
+        
+        elif action_id == "tuneToStation":
+            station_id = props.get("stationToTune", "")
+            if station_id:
+                 self.queue_command({'type': 'launch', 'path': f"launch/tvinput.dtv?ch={station_id}"})
+            else:
+                 self.logger.error("Missing 'stationToTune' property for tuneToStation action.")
+
+        elif action_id == "downloadChannelIcons":
+            self.queue_command({'type': 'download_icons', 'payload': props.get("iconDownloadPath", "")})
+
+        else:
+            self.logger.warning(f"Unhandled actionControlDevice: {action_id}")
+
+    def actionControlGeneral(self, action):
+        self.logger.debug(f"actionControlGeneral called: {action.deviceAction}")
+        if action.deviceAction == indigo.kDeviceGeneralAction.RequestStatus:
+            self.queue_command({'type': 'status_update'})
+        else:
+            self.logger.warning(f"Unhandled actionControlGeneral: {action.deviceAction}")
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    def queue_command(self, command_dict):
+        """Adds a command dictionary to the processing queue."""
+        self.command_queue.put(command_dict)
+        self.logger.debug(f"Queued command: {command_dict}")
+
+    def _command_processing_loop(self):
+        """Runs in a separate thread, processing commands from the queue."""
+        self.logger.debug("Command processing thread started.")
+        while not self.stop_thread.is_set():
+            try:
+                command = self.command_queue.get(timeout=10) # Wait up to 10s for a command
+                if command is None: # Sentinel value to stop the thread
+                    self.logger.debug("Received stop sentinel.")
+                    break 
+
+                self.logger.debug(f"Processing command: {command}")
+                command_type = command.get('type')
+                
+                device_ip, device_port = self._get_device_address()
+                if not device_ip:
+                    self.logger.error(f"Unable to resolve IP address for device {self.id}. Skipping command: {command}")
+                    self.updateStateOnServer("isPoweredOn", "Offline") # Indicate potential issue
+                    continue # Skip this command
+
+                base_url = f"http://{device_ip}:{device_port}"
+
+                if command_type == 'status_update':
+                    self._send_request(base_url, 'query/device-info', method='GET', command_info=command)
+                    self._send_request(base_url, 'query/active-app', method='GET', command_info=command)
+                
+                elif command_type == 'keypress':
+                    path = command.get('path')
+                    if path:
+                        self._send_request(base_url, path, method='POST', command_info=command)
+                    else:
+                         self.logger.error(f"Missing 'path' for keypress command: {command}")
+
+                elif command_type == 'launch':
+                    path = command.get('path')
+                    if path:
+                        self._send_request(base_url, path, method='POST', command_info=command)
+                    else:
+                         self.logger.error(f"Missing 'path' for launch command: {command}")
+
+                elif command_type == 'send_string':
+                    text_to_send = command.get('payload', '')
+                    validated_text = re.sub(r'[^a-zA-Z0-9 ]', '', text_to_send) # Allow upper/lower case now
+                    if validated_text:
+                        self.logger.debug(f"Sending keyboard text: '{validated_text}'")
+                        pause_between_keys = float(self.pluginProps.get("rokuLiteralCommandPause", "0.1"))
+                        for char in validated_text:
+                            quoted_char = urllib.parse.quote(char)
+                            self._send_request(base_url, f"keypress/Lit_{quoted_char}", method='POST', command_info=command)
+                            time.sleep(pause_between_keys) # Pause between keys
+                    else:
+                        self.logger.warning(f"Ignoring send text to Roku, validated string is blank (source: {text_to_send})")
+                
+                elif command_type == 'download_icons':
+                    self._download_channel_icons(base_url, command.get('payload', ''))
+
+                elif command_type == 'arbitrary': # From plugin.py send_arbitrary_command
+                     path = command.get('path')
+                     method = command.get('method', 'POST') # Default to POST if not specified
+                     if path:
+                         self._send_request(base_url, path, method=method, command_info=command)
+                     else:
+                         self.logger.error(f"Missing 'path' for arbitrary command: {command}")
+
+                elif command_type == 'fetch_app_list': # Internal command if needed
+                    self._fetch_and_cache_app_list(base_url)
+
+                else:
+                    self.logger.warning(f"Unknown command type received: {command_type}")
+
+
+            except queue.Empty:
+                pass 
+            except Exception as e:
+                self.logger.exception(f"Error in command processing loop: {e}")
+                time.sleep(5) 
+
+        self.logger.debug("Command processing thread finished.")
+
+    def _send_request(self, base_url, path, method='POST', payload=None, command_info=None):
+        """Sends an HTTP request to the Roku device."""
+        url = f"{base_url}/{path}"
+        self.logger.debug(f"Sending {method} request to {url}")
+        try:
+            if method == 'GET':
+                response = requests.get(url, timeout=5) # 5 second timeout
+            elif method == 'POST':
+                response = requests.post(url, data=payload, timeout=5)
+            else:
+                self.logger.error(f"Unsupported HTTP method: {method}")
+                return
+
+            response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
+            self.logger.debug(f"Response status: {response.status_code}, Content: {response.text[:200]}...") # Log truncated response
+
+            if method == 'GET':
+                self._handle_response(response, command_info)
+
+        except requests.exceptions.ConnectionError as e:
+            self.logger.warning(f"Connection error contacting {url}: {e}. Device might be offline.")
+            self.updateStateOnServer("isPoweredOn", "Offline")
+            self.cached_ip_address = "" # Clear cached IP on connection error
+        except requests.exceptions.Timeout:
+            self.logger.warning(f"Timeout contacting {url}. Device might be offline or slow.")
+            self.updateStateOnServer("isPoweredOn", "Offline")
+            self.cached_ip_address = "" # Clear cached IP on timeout
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Error during {method} request to {url}: {e}")
+        except Exception as e:
+             self.logger.exception(f"Unexpected error sending request to {url}: {e}")
+
+    def _handle_response(self, response, command_info):
+        """Parses XML responses from GET requests."""
+        try:
+            content_type = response.headers.get('Content-Type', '')
+            if 'xml' in content_type:
+                response_text = response.text
+                self.logger.debug(f"Parsing XML response: {response_text[:200]}...")
+                root = ET.fromstring(response_text)
+                
+                if root.tag == "device-info":
+                    self._parse_device_info(root)
+                elif root.tag == "active-app":
+                    self._parse_active_app(root)
+                elif root.tag == "tv-channel":
+                     self._parse_tv_channel(root)
+                elif root.tag == "apps": # Response from /query/apps
+                     self._parse_app_list(root)
+                else:
+                    self.logger.warning(f"Unhandled XML root tag: {root.tag}")
+            else:
+                self.logger.debug(f"Received non-XML response (Content-Type: {content_type})")
+
+        except ET.ParseError as e:
+            self.logger.error(f"Failed to parse XML response: {e}\nResponse Text: {response.text[:500]}")
+        except Exception as e:
+            self.logger.exception(f"Error handling response: {e}")
+
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    def _get_device_address(self):
+        """Resolves the device IP address, using cache or discovery."""
+        if self.plugin.is_ip_v4_valid(self.roku_network_address):
+            return self.roku_network_address, 8060
+
+        if self.cached_ip_address and self.plugin.is_ip_v4_valid(self.cached_ip_address):
+             self.logger.debug(f"Using cached IP: {self.cached_ip_address}")
+             return self.cached_ip_address, 8060
+
+        self.logger.info(f"IP address not cached or invalid, attempting discovery for serial: {self.roku_network_address}")
+        serial_to_find = self.roku_network_address
+        
+        
+        found_ip = None
+        for serial, description in self.plugin.enumerated_roku_devices:
+             if serial == serial_to_find:
+                 match = re.search(r'\(Currently ([\d\.]+)\)', description)
+                 if match:
+                     found_ip = match.group(1)
+                     self.logger.info(f"Discovered IP {found_ip} for serial {serial_to_find}")
+                     break
+        
+        if found_ip:
+            self.cached_ip_address = found_ip
+            self.updateStateOnServer("lastDiscoveredIPAddress", value=found_ip)
+            return found_ip, 8060
+        else:
+            last_known_ip = self.states.get("lastDiscoveredIPAddress", "")
+            if last_known_ip and self.plugin.is_ip_v4_valid(last_known_ip):
+                self.logger.warning(f"Discovery failed for {serial_to_find}, falling back to last known IP: {last_known_ip}")
+                self.cached_ip_address = last_known_ip # Cache it again
+                return last_known_ip, 8060
+            else:
+                 self.logger.error(f"Unable to find IP address for Roku device {self.id} (Serial/Address: {self.roku_network_address}).")
+                 return None, None
+
+    def _parse_device_info(self, root_element):
+        """Parses the /query/device-info XML response."""
+        self.logger.debug("Parsing device info")
+        states_to_update = []
+        try:
+            is_powered_on = root_element.findtext("power-mode") == 'PowerOn'
+            serial_num    = root_element.findtext("serial-number")
+            device_model  = root_element.findtext("model-name")
+            is_tv_str     = root_element.findtext("is-tv", "false") # Default to false if missing
+            is_tv         = is_tv_str.lower() == 'true'
+
+            states_to_update.append({"key": "isPoweredOn", "value": "On" if is_powered_on else "Off"})
+            states_to_update.append({"key": "serialNumber", "value": serial_num})
+            states_to_update.append({"key": "deviceModel", "value": device_model})
+            states_to_update.append({"key": "isTV", "value": is_tv})
+
+            if is_tv and is_powered_on:
+                self.logger.debug("Device is TV, queuing active channel query.")
+                device_ip, device_port = self._get_device_address()
+                if device_ip:
+                     base_url = f"http://{device_ip}:{device_port}"
+                     self._send_request(base_url, 'query/tv-active-channel', method='GET')
+                else:
+                     self.logger.error("Cannot query TV channel, IP address unknown.")
+            elif not is_tv:
+                states_to_update.append({"key": "activeTunerChannel", "value": "n/a"})
+
+            self.updateStatesOnServer(states_to_update)
+            self.updateStateImageOnServer(indigo.kStateImageSel.PowerOn if is_powered_on else indigo.kStateImageSel.PowerOff)
+
+        except Exception as e:
+            self.logger.exception(f"Error parsing device-info XML: {e}")
+
+    def _parse_active_app(self, root_element):
+        """Parses the /query/active-app XML response."""
+        self.logger.debug("Parsing active app info")
+        try:
+            app_name = root_element.findtext("app", "Unknown") # Default if tag missing
+            screensaver_node = root_element.find("screensaver")
+            screensaver_active = screensaver_node is not None
+
+            states_to_update = [{"key": "activeChannel", "value": app_name},
+                                {"key": "screensaverActive", "value": screensaver_active}]
+            self.updateStatesOnServer(states_to_update)
+        except Exception as e:
+            self.logger.exception(f"Error parsing active-app XML: {e}")
+            self.updateStateOnServer("activeChannel", "-- error --")
+
+    def _parse_tv_channel(self, root_element):
+         """Parses the /query/tv-active-channel XML response."""
+         self.logger.debug("Parsing TV channel info")
+         try:
+             channel_node = root_element.find("channel")
+             channel_number = ""
+             if channel_node is not None:
+                 channel_number_node = channel_node.find("number")
+                 if channel_number_node is not None:
+                     channel_number = channel_number_node.text
+             
+             self.updateStateOnServer("activeTunerChannel", channel_number if channel_number else "None")
+         except Exception as e:
+             self.logger.exception(f"Error parsing tv-channel XML: {e}")
+             self.updateStateOnServer("activeTunerChannel", "-- error --")
+             
+    def _fetch_and_cache_app_list(self, base_url):
+        """Sends request for /query/apps and updates cache."""
+        self.logger.debug("Fetching app list...")
+        self._send_request(base_url, 'query/apps', method='GET', command_info={'type': 'internal_fetch_apps'})
+
+    def _parse_app_list(self, root_element):
+        """Parses the /query/apps XML response and updates cache."""
+        self.logger.debug("Parsing app list response")
+        new_app_list = []
+        try:
+            for app_node in root_element.findall("app"):
+                app_id = app_node.get("id")
+                app_version = app_node.get("version")
+                app_name = app_node.text
+                if app_id and app_name:
+                    new_app_list.append((app_id, app_version, app_name))
+                else:
+                    self.logger.warning(f"Skipping app with missing id or name: {ET.tostring(app_node, encoding='unicode')}")
+            
+            self.app_list_cache = sorted(new_app_list, key=lambda x: x[2]) # Sort by name
+            self.last_app_list_update = time.time()
+            self.logger.info(f"Updated app list cache with {len(self.app_list_cache)} apps.")
+        except Exception as e:
+            self.logger.exception(f"Error parsing apps XML: {e}")
+
+    def get_cached_app_list(self):
+         """Returns the cached app list, fetching if stale."""
+         if not self.app_list_cache or (time.time() - self.last_app_list_update > 3600):
+             self.logger.info("App list cache is stale or empty, queuing fetch request.")
+             self.queue_command({'type': 'fetch_app_list'})
+         return self.app_list_cache
+
+    def _download_channel_icons(self, base_url, download_destination_override=""):
+        """Downloads icons for all apps in the cache."""
+        self.logger.info("Starting channel icon download...")
+        
+        if not self.app_list_cache:
+             self.logger.warning("App list cache is empty. Cannot download icons. Triggering app list fetch.")
+             self._fetch_and_cache_app_list(base_url)
+             return
+
+        if download_destination_override:
+            download_destination = download_destination_override
+        else:
+            download_destination = os.path.join(indigo.server.getInstallFolderPath(), "IndigoWebServer/images/controls/static")
+
+        if not os.path.exists(download_destination):
+             try:
+                 os.makedirs(download_destination)
+                 self.logger.info(f"Created icon download directory: {download_destination}")
+             except OSError as e:
+                 self.logger.error(f"Failed to create icon download directory '{download_destination}': {e}")
+                 return # Cannot proceed
+
+        self.logger.info(f"Downloading icons to: {download_destination}")
+        
+        apps_to_download = self.app_list_cache[:] # Copy list
+        for app_id, _, app_name in apps_to_download:
+            icon_url = f"{base_url}/query/icon/{app_id}"
+            self.logger.debug(f"Attempting download of icon for App #{app_id} ({app_name}) from {icon_url}")
+            try:
+                icon_response = requests.get(icon_url, stream=True, timeout=10)
+                icon_response.raise_for_status()
+
+                content_type = icon_response.headers.get('content-type', 'image/png') # Default to png
+                extension = content_type.split('/')[-1] if '/' in content_type else 'png'
+                save_filename = f"RokuChannelIcon_{app_id}.{extension}"
+                save_path = os.path.join(download_destination, save_filename)
+
+                with open(save_path, "wb") as icon_file:
+                    for chunk in icon_response.iter_content(chunk_size=8192):
+                         icon_file.write(chunk)
+                self.logger.debug(f"Saved icon to {save_path}")
+
+            except requests.exceptions.RequestException as e:
+                 self.logger.warning(f"Failed to download icon for app {app_id} ({app_name}): {e}")
+            except IOError as e:
+                 self.logger.error(f"Failed to save icon file for app {app_id} ({app_name}) to {save_path}: {e}")
+            except Exception as e:
+                 self.logger.exception(f"Unexpected error downloading icon for app {app_id} ({app_name}): {e}")
+            
+            time.sleep(0.1) 
+            
+        self.logger.info("Finished channel icon download attempt.")
+
+
+
+
+
 
     # endregion
     #######################################################################################
 
     #######################################################################################
     # region Processing and command functions
-    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    # This routine will process the commands that are not processed automatically by the
-    # base class; it will be called on a concurrent thread
-    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    def handle_unmanaged_command_in_queue(self, device_http_address, rp_command):
-        if rp_command.command_name == "SEND_KEYBOARD_STRING":
-            # needs to send a string of text to the roku device as a series of keypress
-            # commands (RESTFUL_PUT commands)
-            validated_text = re.sub(r'[^a-z\d ]', "", rp_command.command_payload.lower())
-            if validated_text == "":
-                self.host_plugin.logger.debug(f"Ignoring send text to Roku, validated string is blank (source: {rp_command.command_payload})")
-            else:
-                self.host_plugin.logger.threaddebug(f"Sending keyboard text: {validated_text}")
-                pause_between_keys = float(self.indigoDevice.pluginProps.get("rokuLiteralCommandPause", "0.1"))
-                for char in validated_text:
-                    self.queue_device_command(RPFrameworkCommand(RPFrameworkRESTfulDevice.CMD_RESTFUL_PUT, command_payload=f"http|*|/keypress/Lit_{urllib.parse.quote(char)}", post_command_pause=pause_between_keys))
-
-        elif rp_command.command_name == "DOWNLOAD_CHANNEL_ICONS":
-            # the user has requested that we download the icons for channels on the Roku device...
-            download_destination = rp_command.command_payload
-            if download_destination is None or download_destination == "":
-                download_destination = indigo.server.getInstallFolderPath()
-                self.host_plugin.logger.threaddebug(f"Indigo installation folder: {download_destination}")
-                download_destination = os.path.join(download_destination, "IndigoWebServer/images/controls/static")
-
-            # retrieve the list of channels/applications and attempt to download
-            # each application's icon
-            app_list = self.retrieve_app_list()
-
-            for rokuApp in app_list:
-                icon_file = None
-                try:
-                    application_id   = rokuApp[0]
-                    application_name = rokuApp[2]
-
-                    self.host_plugin.logger.debug(f"Attempting download of icon for App #{application_id} ({application_name})")
-                    icon_response = requests.get(f"http://{device_http_address[0]}:{device_http_address[1]}/query/icon/{application_id}", stream=True)
-                    icon_image_extension = icon_response.headers["content-type"].replace("image/", "")
-                    icon_image_save_fn = os.path.join(download_destination, f"RokuChannelIcon_{application_id}.{icon_image_extension}")
-
-                    if icon_response.status_code == 200:
-                        self.host_plugin.logger.debug(f"Saving icon to {icon_image_save_fn}")
-                        with open(icon_image_save_fn, "wb") as icon_file:
-                            icon_response.raw.decode_content = True
-                            shutil.copyfileobj(icon_response.raw, icon_file)
-                    else:
-                        self.host_plugin.logger.error(
-                            f"Received status code [{icon_response.status_code}] whiled downloading channel icon")
-                except:
-                    if icon_file is not None:
-                        icon_file.close()
-                    self.host_plugin.exceptionLog()
-        else:
-            self.host_plugin.logger.error(f"Received unknown command for device {self.indigoDevice.id}: {rp_command.command_name}")
-
-    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    # This routine should return the HTTP address that will be used to connect to the
-    # device. It may connect via IP address or a host name
-    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    def get_restful_device_address(self):
-        self.host_plugin.logger.debug(f"IP address requested for Roku Device: {self.roku_network_address}")
-
-        # if the ip address has not been filled in then we must look it up by serialNumber
-        # via the SSDP service
-        if self.host_plugin.is_ip_v4_valid(self.roku_network_address):
-            ip_address = self.roku_network_address
-        else:
-            ip_address = self.obtain_roku_ip_address(self.roku_network_address)
-
-        # return the IP address to the calling procedure...
-        return ip_address, 8060
-
-    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    # This routine will process any response from the device following the list of
-    # response objects defined for this device type. For telnet this will always be
-    # a text string
-    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    def handle_device_text_response(self, response_obj, rp_command):
-        # loop through the list of response definitions defined in the (base) class
-        # and determine if any match
-        response_text = response_obj.content
-        for rpResponse in self.host_plugin.get_device_response_definitions(self.indigoDevice.deviceTypeId):
-            if rp_command.parent_action is None:
-                action_id = ""
-            elif isinstance(rp_command.parent_action, str):
-                action_id = rp_command.parent_action
-            else:
-                action_id = rp_command.parent_action.indigoActionId
-
-            self.host_plugin.logger.threaddebug(f"Checking Action {action_id}  response against {rpResponse.respond_to_action_id}")
-            if rpResponse.is_response_match(response_text, rp_command, self, self.host_plugin):
-                self.host_plugin.logger.threaddebug(f"Found response match: {rpResponse.respond_to_action_id}")
-                rpResponse.execute_effects(response_text, rp_command, self, self.host_plugin)
-
     # endregion
     #######################################################################################
 
     #######################################################################################
     # region Private Utility Routines
     #######################################################################################
-    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    # This routine will obtain the IP address for a Roku given the serial number; it does
-    # this synchronously with the expectation that it is called from a concurrent thread
-    # when asynchronous operations are required
-    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    def obtain_roku_ip_address(self, serial_number):
-        if self.cached_ip_address == u'':
-            self.host_plugin.update_upnp_enumeration_list(self.indigoDevice.deviceTypeId)
-            roku_list = self.host_plugin.enumerated_devices
-            for rokuDevice in roku_list:
-                enumerated_serial = rokuDevice.usn.replace("uuid:roku:ecp:", "")
-                if enumerated_serial == serial_number:
-                    discovered_ip_address = re.match(r'http://([\d\.]*)\:{0,1}(\d+)', rokuDevice.location, re.I).group(1)
-                    self.host_plugin.logger.debug(f"Found IP address of {discovered_ip_address} for serial #{serial_number}")
-                    self.cached_ip_address = discovered_ip_address
-                    self.indigoDevice.updateStateOnServer("lastDiscoveredIPAddress", value=discovered_ip_address)
-                    return discovered_ip_address
-
-            # if execution made it through the loop then the device was not found... first attempt
-            # to read the last known IP address, then bail with a failure to find
-            if self.indigoDevice.states.get("lastDiscoveredIPAddress", "") != "":
-                last_known_ip = self.indigoDevice.states.get("lastDiscoveredIPAddress")
-                self.host_plugin.logger.debug(f"Using last discovered IP address: {last_known_ip}")
-                return last_known_ip
-            else:
-                self.host_plugin.logger.error(f"IP not found for serial #{serial_number}")
-                return ""
-        else:
-            return self.cached_ip_address
-
     # endregion
     #######################################################################################
 
     #######################################################################################
     # region Custom Response Handlers
     #######################################################################################
-    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    # This callback is made whenever the plugin has received the response to a status
-    # request for a Roku device
-    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    def update_device_status_info(self, response_obj, rp_command):
-        device_info_doc = xml.etree.ElementTree.fromstring(response_obj)
-
-        if device_info_doc.tag == "device-info":
-            self.host_plugin.logger.debug("Received device info query response")
-            is_powered_on = device_info_doc.find("power-mode").text == 'PowerOn'
-            serial_num    = device_info_doc.find("serial-number").text
-            device_model  = device_info_doc.find("model-name").text
-            is_tv         = device_info_doc.find("is-tv").text
-
-            states_to_update = []
-            if is_powered_on:
-                states_to_update.append({"key": "isPoweredOn", "value": "On"})
-            else:
-                states_to_update.append({"key": "isPoweredOn", "value": "Off"})
-            states_to_update.append({"key" : "serialNumber", "value": serial_num})
-            states_to_update.append({"key": "deviceModel", "value": device_model})
-            states_to_update.append({"key": "isTV", "value": is_tv})
-
-            # if this device is a TV then we need to perform additional queries in order
-            # to pull in the tv/tuner information
-            if is_tv == "true":
-                self.host_plugin.logger.threaddebug("Queuing TV query commands")
-                self.queue_device_command(RPFrameworkCommand(RPFrameworkRESTfulDevice.CMD_RESTFUL_GET, command_payload="http|*|/query/tv-active-channel", parent_action="updateRokuStatus"))
-            else:
-                states_to_update.append({"key": "activeTunerChannel", "value": "n/a" })
-
-            self.indigoDevice.updateStatesOnServer(states_to_update)
-
-        elif device_info_doc.tag == "active-app":
-            try:
-                self.host_plugin.logger.debug("Received active app query response")
-                app_name = device_info_doc.find("app").text
-                screen_saver_on = device_info_doc.find("screensaver")
-
-                states_to_update = [{"key": "activeChannel", "value": app_name},
-                                    {"key": "screensaverActive", "value": screen_saver_on is not None}]
-                self.indigoDevice.updateStatesOnServer(states_to_update)
-            except:
-                self.host_plugin.logger.debug("Failed to parse active app query response")
-                states_to_update = [{"key": "activeChannel", "value": "-- error --"},
-                                    {"key": "screensaverActive", "value": False}]
-                self.indigoDevice.updateStatesOnServer(states_to_update)
-
-        elif device_info_doc.tag == "tv-channel":
-            self.host_plugin.logger.debug("Received active channel query response")
-            try:
-                channel_node = device_info_doc.find("channel")
-                if channel_node is None:
-                    channel_number = ''
-                else:
-                    channel_number = device_info_doc.find("channel").find("number").text
-
-                states_to_update = [{"key": "activeTunerChannel", "value": channel_number}]
-                self.indigoDevice.updateStatesOnServer(states_to_update)
-            except:
-                states_to_update = [{"key": "activeTunerChannel", "value": "-- error --"}]
-                self.indigoDevice.updateStatesOnServer(states_to_update)
-
-    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    # This routine will handle an error as thrown by the REST call... Some Roku devices
-    # return an Error 60 / device timeout when off
-    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    def handle_restful_error(self, rp_command, err, response=None):
-        if type(err).__name__ == "ConnectionError":
-            # update the device to Off and/or offline
-            self.host_plugin.logger.debug(f"Failed to contact device {self.indigoDevice.id}; device may be off.")
-            self.host_plugin.logger.debug(f"{err}")
-
-            states_to_update = [{"key": "activeChannel", "value": ""},
-                                {"key": "screensaverActive", "value": False},
-                                {"key": "isPoweredOn", "value": "Off"}]
-            self.indigoDevice.updateStatesOnServer(states_to_update)
-        else:
-            super(RokuNetworkRemoteDevice, self).handle_restful_error(rp_command, err, response)
-
     # endregion
     #######################################################################################
 
     #######################################################################################
     # region Public command-interface functions
     #######################################################################################
-    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    # This routine will retrieve a list of the available applications on the connected
-    # roku device (it does this synchronously with the expectation that it is called on
-    # a concurrent thread when necessary
-    # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    def retrieve_app_list(self):
-        try:
-            # determine the IP address used to connect to the roku device
-            device_ip_address = self.get_restful_device_address()
-
-            # send a GET to the roku which should result in a list of applications
-            # available (in XML format)
-            self.host_plugin.logger.debug(f"Sending /query/apps request to {device_ip_address[0]}")
-
-            # read the response to the query
-            response  = requests.get(f"http://{device_ip_address[0]}:{device_ip_address[1]}/query/apps")
-            body_text = response.text
-            self.host_plugin.logger.threaddebug(f"App list response: {response.status_code}; body: {body_text}")
-
-            # parse out the XML returned which should be in the format of:
-            #	<apps>
-            #	<app id="[id]">[appname]</app>
-            # note that this may not be standard XML... so use a regular expression to parse
-            re_app_parser = re.compile(r"\<app id=\"(\d+)\"\s*(?:subtype=\"[\w]+\"){0,1}\s*(?:type=\"[\w]+\"){0,1}\s*version=\"([\d\.]+)\"\>(.*)\</app\>")
-            app_matches   = re_app_parser.findall(body_text)
-            return app_matches
-        except:
-            self.host_plugin.exceptionLog()
-            return []
-
     # endregion
     #######################################################################################
