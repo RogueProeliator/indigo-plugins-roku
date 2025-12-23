@@ -96,6 +96,46 @@
 				<TriggerLabel>Screen Saver On</TriggerLabel>
 				<ControlPageLabel>Screen Saver On</ControlPageLabel>
 			</State>
+			<State id="mediaPlayerState">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Media Player State</TriggerLabel>
+				<ControlPageLabel>Media Player State</ControlPageLabel>
+			</State>
+			<State id="mediaPlayerApp">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Media Player App</TriggerLabel>
+				<ControlPageLabel>Media Player App</ControlPageLabel>
+			</State>
+			<State id="mediaPositionSeconds">
+				<ValueType>Integer</ValueType>
+				<TriggerLabel>Media Position (sec)</TriggerLabel>
+				<ControlPageLabel>Media Position (sec)</ControlPageLabel>
+			</State>
+			<State id="mediaDurationSeconds">
+				<ValueType>Integer</ValueType>
+				<TriggerLabel>Media Duration (sec)</TriggerLabel>
+				<ControlPageLabel>Media Duration (sec)</ControlPageLabel>
+			</State>
+			<State id="mediaIsLive">
+				<ValueType boolType="YesNo">Boolean</ValueType>
+				<TriggerLabel>Media Is Live</TriggerLabel>
+				<ControlPageLabel>Media Is Live</ControlPageLabel>
+			</State>
+			<State id="mediaAudioFormat">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Media Audio Format</TriggerLabel>
+				<ControlPageLabel>Media Audio Format</ControlPageLabel>
+			</State>
+			<State id="mediaVideoFormat">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Media Video Format</TriggerLabel>
+				<ControlPageLabel>Media Video Format</ControlPageLabel>
+			</State>
+			<State id="mediaVideoResolution">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Media Video Resolution</TriggerLabel>
+				<ControlPageLabel>Media Video Resolution</ControlPageLabel>
+			</State>
 		</States>
 	</Device>
 	

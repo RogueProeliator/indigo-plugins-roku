@@ -300,6 +300,11 @@ class RokuDevice:
             if response:
                 self._parse_tv_channel(response.text)
         
+        # Query media player state
+        response = self._get(f"http://{ip}:{port}/query/media-player")
+        if response:
+            self._parse_media_player(response.text)
+        
         self.last_update_time = time.time()
         self.bad_calls = 0  # Reset on success
 
@@ -640,6 +645,161 @@ class RokuDevice:
             self.device.updateStateOnServer("activeTunerChannel", value="-- error --")
         except Exception as e:
             self.logger.error(f"Error processing TV channel: {e}")
+
+    def _parse_media_player(self, xml_text: str) -> None:
+        """
+        Parse media player response and update states.
+        
+        Args:
+            xml_text: XML response from /query/media-player
+            
+        Example response:
+        <player error="false" state="play">
+            <plugin bandwidth="44692475 bps" id="dev" name="AppName"/>
+            <format audio="aac" captions="none" container="mp4" drm="none" video="mpeg4_15" video_res="1280x546"/>
+            <buffering current="1000" max="1000" target="0"/>
+            <position>6916 ms</position>
+            <duration>887999 ms</duration>
+            <is_live>false</is_live>
+            <runtime>887999 ms</runtime>
+        </player>
+        """
+        try:
+            root = ET.fromstring(xml_text)
+            
+            if root.tag != "player":
+                return
+            
+            states_to_update = []
+            
+            # Player state (play, pause, stop, close, etc.)
+            player_state = root.get("state", "close")
+            player_error = root.get("error", "false") == "true"
+            
+            if player_error:
+                player_state = "error"
+            
+            states_to_update.append({
+                "key": "mediaPlayerState",
+                "value": player_state
+            })
+            
+            # Plugin/app info
+            plugin_elem = root.find("plugin")
+            if plugin_elem is not None:
+                app_name = plugin_elem.get("name", "")
+                states_to_update.append({
+                    "key": "mediaPlayerApp",
+                    "value": app_name
+                })
+            else:
+                states_to_update.append({
+                    "key": "mediaPlayerApp",
+                    "value": ""
+                })
+            
+            # Position (convert from ms to seconds)
+            position_elem = root.find("position")
+            if position_elem is not None and position_elem.text:
+                # Format is "6916 ms" - extract the number
+                position_text = position_elem.text.replace(" ms", "").strip()
+                try:
+                    position_ms = int(position_text)
+                    position_sec = position_ms // 1000
+                    states_to_update.append({
+                        "key": "mediaPositionSeconds",
+                        "value": position_sec
+                    })
+                except ValueError:
+                    states_to_update.append({
+                        "key": "mediaPositionSeconds",
+                        "value": 0
+                    })
+            else:
+                states_to_update.append({
+                    "key": "mediaPositionSeconds",
+                    "value": 0
+                })
+            
+            # Duration (convert from ms to seconds)
+            duration_elem = root.find("duration")
+            if duration_elem is not None and duration_elem.text:
+                duration_text = duration_elem.text.replace(" ms", "").strip()
+                try:
+                    duration_ms = int(duration_text)
+                    duration_sec = duration_ms // 1000
+                    states_to_update.append({
+                        "key": "mediaDurationSeconds",
+                        "value": duration_sec
+                    })
+                except ValueError:
+                    states_to_update.append({
+                        "key": "mediaDurationSeconds",
+                        "value": 0
+                    })
+            else:
+                states_to_update.append({
+                    "key": "mediaDurationSeconds",
+                    "value": 0
+                })
+            
+            # Is live content
+            is_live_elem = root.find("is_live")
+            if is_live_elem is not None and is_live_elem.text:
+                is_live = is_live_elem.text.lower() == "true"
+                states_to_update.append({
+                    "key": "mediaIsLive",
+                    "value": is_live
+                })
+            else:
+                states_to_update.append({
+                    "key": "mediaIsLive",
+                    "value": False
+                })
+            
+            # Format info
+            format_elem = root.find("format")
+            if format_elem is not None:
+                audio_format = format_elem.get("audio", "")
+                video_format = format_elem.get("video", "")
+                video_res = format_elem.get("video_res", "")
+                
+                states_to_update.append({
+                    "key": "mediaAudioFormat",
+                    "value": audio_format
+                })
+                states_to_update.append({
+                    "key": "mediaVideoFormat",
+                    "value": video_format
+                })
+                states_to_update.append({
+                    "key": "mediaVideoResolution",
+                    "value": video_res
+                })
+            else:
+                states_to_update.append({"key": "mediaAudioFormat", "value": ""})
+                states_to_update.append({"key": "mediaVideoFormat", "value": ""})
+                states_to_update.append({"key": "mediaVideoResolution", "value": ""})
+            
+            # Batch update states
+            if states_to_update:
+                self.device.updateStatesOnServer(states_to_update)
+            
+        except ET.ParseError:
+            self.logger.debug("Failed to parse media-player response")
+            # Set default/empty values on parse error
+            self.device.updateStatesOnServer([
+                {"key": "mediaPlayerState", "value": "close"},
+                {"key": "mediaPlayerApp", "value": ""},
+                {"key": "mediaPositionSeconds", "value": 0},
+                {"key": "mediaDurationSeconds", "value": 0},
+                {"key": "mediaIsLive", "value": False},
+                {"key": "mediaAudioFormat", "value": ""},
+                {"key": "mediaVideoFormat", "value": ""},
+                {"key": "mediaVideoResolution", "value": ""}
+            ])
+        except Exception as e:
+            self.logger.error(f"Error processing media player: {e}")
 
     # endregion
     # ========================================================================
