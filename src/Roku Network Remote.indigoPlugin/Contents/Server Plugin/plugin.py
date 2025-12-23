@@ -296,7 +296,7 @@ class Plugin(indigo.PluginBase):
         try:
             if action_id == "remoteButtonToRoku":
                 button = props.get("buttonSelect", "")
-                repeat_count = int(props.get("repeatCount", "1"))
+                repeat_count = int(props.get("repeatCount", "") or "1")
                 roku_device.send_keypress(button, repeat_count)
                 
             elif action_id == "sendKeyboardString":
