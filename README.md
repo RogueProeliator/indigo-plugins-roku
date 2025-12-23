@@ -13,7 +13,7 @@ This is a complete rewrite of the Roku Network Remote plugin for Indigo 2025.1, 
 - **Keyboard Input** - Send text strings for search and input fields
 - **App Launching** - Launch any installed channel/app
 - **TV Tuner Control** - Set channels on Roku TV devices
-- **Status Monitoring** - Track power state, current app, and TV channel
+- **Status Monitoring** - Track power state, current app, current media, and TV channel
 - **Channel Icons** - Download app icons for use in Control Pages
 
 ## Requirements
