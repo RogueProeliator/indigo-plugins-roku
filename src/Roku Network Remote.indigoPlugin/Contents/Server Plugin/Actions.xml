@@ -11,8 +11,11 @@
 					<Option value="B">B</Option>
 					<Option value="Back">Back</Option>
 					<Option value="Backspace">Backspace</Option>
+					<Option value="ChannelDown">Channel Down (Roku TV)</Option>
+					<Option value="ChannelUp">Channel Up (Roku TV)</Option>
 					<Option value="Down">Down</Option>
 					<Option value="Enter">Enter</Option>
+					<Option value="FindRemote">Find Remote</Option>
 					<Option value="Fwd">Forward</Option>
 					<Option value="Home">Home</Option>
 					<Option value="Info">Info</Option>
@@ -32,6 +35,7 @@
 					<Option value="Right">Right</Option>
 					<Option value="Search">Search</Option>
 					<Option value="Select">Select</Option>
+					<Option value="Sleep">Sleep Timer</Option>
 					<Option value="Up">Up</Option>
 					<Option value="VolumeDown">Volume Down (Roku TV)</Option>
 					<Option value="VolumeMute">Volume Mute Toggle (Roku TV)</Option>
@@ -43,6 +47,7 @@
 			</Field>
 		</ConfigUI>
 	</Action>
+	
 	<Action id="sendKeyboardString" uiPath="DeviceActions" deviceFilter="self">
 		<Name>Send a string of text to Roku</Name>
 		<CallbackMethod>execute_action</CallbackMethod>
@@ -51,12 +56,13 @@
 				<Label>Text to Send:</Label>
 			</Field>
 			<Field id="sendTextSubInstructions" type="label" fontSize="small">
-				<Label>Any string with alphanumerical characters or punctuation may be sent to the Roku as if they were typed in via the mobile app.</Label>
+				<Label>Any string with alphanumerical characters may be sent to the Roku as if they were typed in via the mobile app.</Label>
 			</Field>
 		</ConfigUI>
 	</Action>
 
-	<Action id="sep01" uiPath="DeviceActions"  />
+	<Action id="sep01" uiPath="DeviceActions" />
+	
 	<Action id="launchChannel" uiPath="DeviceActions" deviceFilter="self">
 		<Name>Launch a channel/application on Roku</Name>
 		<CallbackMethod>execute_action</CallbackMethod>
@@ -67,6 +73,7 @@
 			</Field>
 		</ConfigUI>
 	</Action>
+	
 	<Action id="tuneToStation" uiPath="DeviceActions" deviceFilter="self">
 		<Name>Set RokuTV Tuner Channel</Name>
 		<CallbackMethod>execute_action</CallbackMethod>
@@ -80,7 +87,8 @@
 		</ConfigUI>
 	</Action>
 
-	<Action id="sep02" uiPath="DeviceActions"  />
+	<Action id="sep02" uiPath="DeviceActions" />
+	
 	<Action id="downloadChannelIcons" uiPath="DeviceActions" deviceFilter="self">
 		<Name>Download Channel Icons</Name>
 		<CallbackMethod>execute_action</CallbackMethod>

@@ -1,0 +1,4 @@
+# Roku Network Remote Plugin - Requirements
+# Python packages required for operation
+
+requests>=2.28.0

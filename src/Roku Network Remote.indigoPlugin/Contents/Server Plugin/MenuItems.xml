@@ -22,10 +22,12 @@
 	</MenuItem>
 
 	<MenuItem id="deviceCmdsSeparator" type="separator" />
+	
 	<MenuItem id="toggleDebug">
 		<Name>Toggle Debugging On/Off</Name>
 		<CallbackMethod>toggle_debug_enabled</CallbackMethod>
 	</MenuItem>
+	
 	<MenuItem id="debugDumpDeviceDetails">
 		<Name>Log Device Details</Name>
 		<CallbackMethod>dump_device_details_to_log</CallbackMethod>
@@ -44,30 +46,26 @@
 			</Field>
 		</ConfigUI>
 	</MenuItem>
+	
 	<MenuItem id="debugUPNPDevicesFound">
 		<Name>Perform UPnP Search...</Name>
 		<CallbackMethod>log_upnp_devices_found</CallbackMethod>
 		<ButtonTitle>Search</ButtonTitle>
 		<ConfigUI>
 			<Field type="label" id="logUPnPDevicesInstructions" fontSize="small">
-				<Label>Perform a UPnP search in an attempt to find devices available on the network and display those in your browser. This may help in debugging devices found or not found on the network during device setup and configuration</Label>
+				<Label>Perform a UPnP search in an attempt to find Roku devices available on the network and display those in your Indigo event log. This may help in debugging devices found or not found on the network during device setup and configuration.</Label>
 			</Field>
-			<Field id="logUPnPDevices_service" type="menu" defaultValue="0">
-				<Label>Find Devices/Services:</Label>
-				<List>
-					<Option value="0">Find All</Option>
-				</List>
-			</Field>
-			<Field id="logUPnPDevices_Warning" type="label" fontSize="small" alignWithControl="true">
-				<Label>Note that some devices will only respond once in a set amount of time; you may want to wait a few minutes and try again if your are missing a device(s).</Label>
+			<Field id="logUPnPDevices_Warning" type="label" fontSize="small">
+				<Label>Note that some devices will only respond once in a set amount of time; you may want to wait a few minutes and try again if you are missing a device(s).</Label>
 			</Field>
 			<Field type="label" id="logUPnPDevicesTimeWarning" fontColor="blue">
-				<Label>NOTE: This function may take up to 30 seconds to complete upon hitting the Run Debug button; your results will be launched in a browser window on the server.</Label>
+				<Label>NOTE: This function may take up to 10 seconds to complete upon hitting the Search button.</Label>
 			</Field>
 		</ConfigUI>
 	</MenuItem>
 	
 	<MenuItem id="updateSectionSeparator" />
+	
 	<MenuItem id="viewLicense">
 		<Name>View License...</Name>
 		<ConfigUI>
