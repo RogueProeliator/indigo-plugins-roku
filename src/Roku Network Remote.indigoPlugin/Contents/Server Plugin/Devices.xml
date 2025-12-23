@@ -41,6 +41,9 @@
 			<Field id="rokuLiteralCommandPause" type="textfield" defaultValue="0.05">
 				<Label>Pause after text character sent:</Label>
 			</Field>
+			<Field type="label" id="pollingOptionsSpacer" fontSize="small">
+				<Label></Label>
+			</Field>
 			<Field id="statusPollingTitle" type="label" fontSize="small">
 				<Label>STATUS POLLING OPTIONS</Label>
 			</Field>

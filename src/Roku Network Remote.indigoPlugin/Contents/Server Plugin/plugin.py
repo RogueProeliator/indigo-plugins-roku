@@ -439,8 +439,8 @@ class Plugin(indigo.PluginBase):
             # Perform UPnP discovery
             self.enumerated_roku_devices = self.discovery.discover_devices(timeout=5)
             
-            # Add manual entry option
-            menu_items.append(("", "-- Manual Entry Below --"))
+            # Add manual entry option (use placeholder ID - Indigo requires non-empty IDs)
+            menu_items.append(("MANUAL_ENTRY", "-- Manual Entry Below --"))
             
             # Add discovered devices
             for roku_device in self.enumerated_roku_devices:
@@ -450,7 +450,7 @@ class Plugin(indigo.PluginBase):
                 
         except Exception as e:
             self.logger.error(f"Error enumerating devices: {e}")
-            menu_items.append(("", "-- Discovery Error --"))
+            menu_items.append(("DISCOVERY_ERROR", "-- Discovery Error --"))
         
         return menu_items
 
@@ -472,7 +472,8 @@ class Plugin(indigo.PluginBase):
         """
         selected = values_dict.get("upnpEnumeratedDevices", "")
         
-        if selected:
+        # Ignore placeholder menu items
+        if selected and selected not in ("MANUAL_ENTRY", "DISCOVERY_ERROR"):
             # Use serial number as address for dynamic IP resolution
             values_dict["httpAddress"] = selected
             self.logger.info(f"Selected Roku device: {selected}")
