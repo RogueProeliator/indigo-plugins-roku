@@ -35,8 +35,9 @@ https://developer.roku.com/docs/developer-program/debugging/external-control-api
 
 ## Support
 
-For issues and feature requests, please visit:
-https://github.com/RogueProeliator/indigo-plugins-roku
+- [Full Documentation](https://github.com/RogueProeliator/indigo-plugins-roku/wiki)
+- [GitHub Repository](https://github.com/RogueProeliator/indigo-plugins-roku)
+- [Help Forum](https://forums.indigodomo.com/viewforum.php?f=61)
 
 ## License
 
@@ -46,4 +47,8 @@ MIT License - See LICENSE.txt for details.
 
 Developed by RogueProeliator <rp@rogueproeliator.com>
 
-Rewritten for Indigo 2025.1 without RPFramework dependency.
+---
+
+_**Previous Indigo Releases**_  
+[v2.4.8 Plugin Indigo 7.3 through 2022.1](https://github.com/RogueProeliator/indigo-plugins-roku/releases/tag/v2.4.8)<br>
+[v1.6.19 Plugin Indigo 6 - Indigo 7.2](https://github.com/RogueProeliator/indigo-plugins-roku/releases/tag/v1.6.19)

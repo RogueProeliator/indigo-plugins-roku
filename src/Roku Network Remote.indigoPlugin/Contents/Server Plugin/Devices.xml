@@ -7,7 +7,7 @@
 		<Name>Roku Network Remote Control</Name>
 		<ConfigUI>
 			<Field id="commOptionsTitle" type="label">
-				<Label>NETWORK OPTIONS</Label>
+				<Label>CONNECTION OPTIONS</Label>
 			</Field>
 			<Field id="instructionSeparator2" type="separator" />
 			<Field id="rokuSelectionInstructions" type="label" fontSize="small">
