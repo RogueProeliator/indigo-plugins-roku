@@ -98,7 +98,17 @@ class Plugin(indigo.PluginBase):
         - Initializing device states
         - Starting background services
         """
-        self.logger.info("Plugin starting...")
+        import sys
+        
+        # Log startup banner
+        self.logger.info(f"{'=' * 28} Initializing Plugin {'=' * 28}")
+        self.logger.info(f"{'Plugin Name:':<30} {self.pluginDisplayName}")
+        self.logger.info(f"{'Plugin Version:':<30} {self.pluginVersion}")
+        self.logger.info(f"{'Plugin ID:':<30} {self.pluginId}")
+        self.logger.info(f"{'Logging Level:':<30} {logging.getLevelName(self.debug_level)}")
+        self.logger.info(f"{'Indigo Version:':<30} {indigo.server.version}")
+        self.logger.info(f"{'Python Version:':<30} {sys.version.split()[0]}")
+        self.logger.info("=" * 72)
         
         # Initialize all existing devices to a known state
         for dev in indigo.devices.iter("self"):
