@@ -65,9 +65,9 @@ class Plugin(indigo.PluginBase):
         self.plugin_is_shutting_down = False
         
         # Configure logging
-        debug_level_str = self.pluginPrefs.get('debugLevel', '0')
+        debug_level_str = str(plugin_prefs.get('debugLevel', '0'))
         self.debug_level = DEBUG_LEVEL_MAP.get(debug_level_str, logging.WARNING)
-        
+
         self.plugin_file_handler.setFormatter(
             logging.Formatter(fmt=LOG_FORMAT, datefmt='%Y-%m-%d %H:%M:%S')
         )

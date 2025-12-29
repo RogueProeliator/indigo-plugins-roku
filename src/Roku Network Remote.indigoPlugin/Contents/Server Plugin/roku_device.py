@@ -818,6 +818,7 @@ class RokuDevice:
             Response object or None on error
         """
         try:
+            self.logger.debug(f"HTTP GET: {url}")
             response = requests.get(url, timeout=self.DEFAULT_TIMEOUT)
             return response
         except requests.exceptions.ConnectionError as e:
@@ -844,6 +845,7 @@ class RokuDevice:
             Response object or None on error
         """
         try:
+            self.logger.debug(f"HTTP POST: {url} | Data: {data}")
             response = requests.post(url, data=data, timeout=self.DEFAULT_TIMEOUT)
             return response
         except requests.exceptions.ConnectionError as e:
