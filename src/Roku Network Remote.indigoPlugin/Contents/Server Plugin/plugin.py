@@ -417,7 +417,7 @@ class Plugin(indigo.PluginBase):
         """
         if not user_cancelled:
             # Update debug level
-            debug_level_str = values_dict.get('debugLevel', '0')
+            debug_level_str = str(values_dict.get('debugLevel', '0'))
             self.debug_level = DEBUG_LEVEL_MAP.get(debug_level_str, logging.WARNING)
             self.indigo_log_handler.setLevel(self.debug_level)
             
