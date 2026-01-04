@@ -99,6 +99,7 @@ class RokuDevice:
         # Status tracking
         self.bad_calls = 0
         self.last_update_time: float = 0
+        self._connection_error_logged = False  # Track if we've already logged a connection error
         
         self.logger.debug(f"RokuDevice initialized for {device.name}")
 
@@ -284,10 +285,18 @@ class RokuDevice:
         
         ip, port = address
         
-        # Query device info
+        # Query device info - if this fails, abort the entire update
         response = self._get(f"http://{ip}:{port}/query/device-info")
-        if response:
-            self._parse_device_info(response.text)
+        if not response:
+            # Connection failed - _get already handled logging and state update
+            return
+        
+        # Connection successful - reset error tracking
+        if self._connection_error_logged:
+            self.logger.info(f"Connection restored to {self.device.name}")
+            self._connection_error_logged = False
+        
+        self._parse_device_info(response.text)
         
         # Query active app
         response = self._get(f"http://{ip}:{port}/query/active-app")
@@ -918,7 +927,18 @@ class RokuDevice:
             self.logger.debug(f"Using last known IP address: {last_known}")
             return last_known
         
-        self.logger.error(f"IP not found for serial #{serial_number}")
+        # Only log the IP not found message on first failure
+        if not self._connection_error_logged:
+            self.logger.warning(f"Serial number {serial_number} not found on network")
+            self._connection_error_logged = True
+            
+            # Update device state to indicate disconnected
+            self.device.updateStatesOnServer([
+                {"key": "activeChannel", "value": ""},
+                {"key": "screensaverActive", "value": False},
+                {"key": "isPoweredOn", "value": False, "uiValue": "Disconnected"}
+            ])
+        
         return None
 
     @staticmethod
@@ -948,17 +968,24 @@ class RokuDevice:
         """
         Handle connection errors (device may be off).
         
+        Only logs a warning on the first failure - subsequent failures are suppressed
+        until the connection is restored. Sets device to Disconnected state.
+        
         Args:
             error: The connection error
         """
-        self.logger.debug(f"Failed to contact device {self.device.id}; device may be off.")
-        self.logger.debug(f"{error}")
+        # Only log the warning once until connection is restored
+        if not self._connection_error_logged:
+            self.logger.warning(f"Connection error to {self.device.name}: device may be off or unreachable")
+            self._connection_error_logged = True
         
-        # Update device state to indicate offline/off
+        self.logger.debug(f"Failed to contact device {self.device.id}; {error}")
+        
+        # Update device state to indicate disconnected
         self.device.updateStatesOnServer([
             {"key": "activeChannel", "value": ""},
             {"key": "screensaverActive", "value": False},
-            {"key": "isPoweredOn", "value": False, "uiValue": "Off"}
+            {"key": "isPoweredOn", "value": False, "uiValue": "Disconnected"}
         ])
         
         self.bad_calls += 1

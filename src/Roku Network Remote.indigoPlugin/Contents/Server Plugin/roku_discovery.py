@@ -159,7 +159,7 @@ class RokuDiscovery:
             if device.serial_number == serial_number:
                 return device.ip_address
         
-        self.logger.warning(f"Serial number {serial_number} not found on network")
+        self.logger.debug(f"Serial number {serial_number} not found on network")
         return None
 
     def _build_search_request(self) -> str:
