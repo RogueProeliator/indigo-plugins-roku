@@ -22,12 +22,6 @@ This is a complete rewrite of the Roku Network Remote plugin for Indigo 2025.1, 
 - Python 3.10+ (included with Indigo)
 - Network access to Roku device(s)
 
-## Installation
-
-1. Download the latest release
-2. Double-click the `.indigoPlugin` file to install
-3. Enable the plugin in Indigo
-
 ## API Reference
 
 This plugin uses Roku's External Control Protocol (ECP):
